@@ -1,18 +1,41 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { useStore } from '@/state/createStore';
+import { sessionStore } from '@/state/sessionStore';
+import { useTheme } from '@/theme/useTheme';
 
-SplashScreen.preventAutoHideAsync();
+export default function RootLayout() {
+  const theme = useTheme();
+  const signedIn = useStore(sessionStore, (s) => s.user !== null);
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const base = theme.dark ? DarkTheme : DefaultTheme;
+  const navigationTheme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: theme.primary,
+      background: theme.bg,
+      card: theme.surface,
+      text: theme.text,
+      border: theme.border,
+    },
+  };
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
+    <ThemeProvider value={navigationTheme}>
+      <StatusBar style="auto" />
+      <Stack screenOptions={{ headerShown: false }}>
+        {/* Always available: decides where to send the user. Guarded screens fall back here. */}
+        <Stack.Screen name="index" />
+        {/* Signed-out users can only reach (auth); signed-in users only (app). */}
+        <Stack.Protected guard={!signedIn}>
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn}>
+          <Stack.Screen name="(app)" />
+        </Stack.Protected>
+      </Stack>
     </ThemeProvider>
   );
 }
