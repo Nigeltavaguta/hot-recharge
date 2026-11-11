@@ -19,6 +19,7 @@ const SERVICES: { kind: PurchaseKind; label: string; icon: IconName }[] = [
   { kind: 'airtime', label: 'Airtime', icon: 'airtime' },
   { kind: 'bundle', label: 'Bundles', icon: 'bundle' },
   { kind: 'zesa', label: 'ZESA', icon: 'zesa' },
+  { kind: 'payment', label: 'Payments', icon: 'payment' },
 ];
 
 export default function HomeScreen() {
@@ -32,6 +33,7 @@ export default function HomeScreen() {
     airtime: { bg: theme.primarySoft, fg: theme.primary },
     bundle: { bg: theme.accentSoft, fg: theme.accent },
     zesa: { bg: theme.warningSoft, fg: theme.warning },
+    payment: { bg: theme.primarySoft, fg: theme.primary },
   };
 
   return (
@@ -56,6 +58,7 @@ export default function HomeScreen() {
       {focused && <StatusBar style={theme.dark ? 'light' : 'dark'} />}
 
       {vm.error && <Notice tone="danger" text={vm.error} />}
+      {vm.user?.demonstration && <Notice tone="warning" text="DEMONSTRATION — simulated balances, purchases, tokens and PINs. No real money." />}
 
       <View style={styles.section}>
         <SectionHeader title="Buy" />

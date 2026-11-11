@@ -1,11 +1,22 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import { api, errorMessage } from '@/services';
 
 import { useStore } from '@/state/createStore';
-import { sessionStore } from '@/state/sessionStore';
+import { sessionStore, signIn } from '@/state/sessionStore';
 import { useTheme } from '@/theme/useTheme';
 
 export default function RootLayout() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let active = true;
+    api.restoreSession().then(user => { if (active && user) signIn(user); })
+      .catch(error => { if (active) sessionStore.set({ restoreError: errorMessage(error) }); })
+      .finally(() => { if (active) setReady(true); });
+    return () => { active = false; };
+  }, []);
   const theme = useTheme();
   const signedIn = useStore(sessionStore, (s) => s.user !== null);
 
@@ -22,6 +33,7 @@ export default function RootLayout() {
     },
   };
 
+  if (!ready) return <View style={{ flex: 1, justifyContent: 'center', backgroundColor: theme.bg }}><ActivityIndicator /></View>;
   return (
     <ThemeProvider value={navigationTheme}>
       <StatusBar style="auto" />

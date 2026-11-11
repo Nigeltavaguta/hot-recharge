@@ -1,7 +1,7 @@
 import { createStore } from './createStore';
 import { setDraftOrder } from './walletStore';
 
-export type PurchaseKind = 'airtime' | 'bundle' | 'zesa';
+export type PurchaseKind = 'airtime' | 'bundle' | 'zesa' | 'payment';
 
 interface PurchaseSheetState {
   /** What the bottom sheet is showing, or null when it is closed. */

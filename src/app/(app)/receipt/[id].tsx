@@ -1,9 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
-import { Card, DetailRow, EmptyState } from '@/components/Card';
+import { Card, DetailRow, EmptyState, Notice } from '@/components/Card';
 import { Icon } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
 import { TokenCard, codeOf, shareTransaction } from '@/components/TokenCard';
@@ -13,7 +13,7 @@ import { openPurchase } from '@/state/purchaseSheet';
 import { space } from '@/theme/colors';
 import { useTheme } from '@/theme/useTheme';
 import { formatDateTime, formatMoney } from '@/utils/format';
-import { useTransaction } from '@/viewmodels/useWalletViewModel';
+import { useTransactionDetails } from '@/viewmodels/useWalletViewModel';
 
 const HEADLINE: Record<Transaction['status'], string> = {
   success: 'Purchase successful',
@@ -28,12 +28,15 @@ function buyAgain(tx: Transaction) {
 
 export default function ReceiptScreen() {
   const { id, fresh } = useLocalSearchParams<{ id: string; fresh?: string }>();
-  const tx = useTransaction(id);
+  const detail = useTransactionDetails(id);
+  const tx = detail.tx;
   const theme = useTheme();
 
   if (!tx) {
     return (
       <Screen>
+        {detail.loading && <ActivityIndicator />}
+        {detail.error && <><Notice tone="danger" text={detail.error} /><Button label="Retry receipt" onPress={detail.retry} /></>}
         <EmptyState icon="info" title="Receipt not found" text="This transaction is no longer available." />
         <Button label="Back to home" onPress={() => router.dismissAll()} />
       </Screen>
@@ -41,10 +44,12 @@ export default function ReceiptScreen() {
   }
 
   const colors = statusColors(theme, tx.status);
-  const canRepeat = tx.type !== 'payment';
+  const canRepeat = tx.type !== 'payment' && tx.status !== 'pending';
 
   return (
     <Screen>
+      {tx.demonstration && <Notice tone="warning" text="DEMONSTRATION receipt — simulated transaction, token or PIN. No real money." />}
+      {detail.error && <Notice tone="danger" text={detail.error} />}
       <View style={styles.status}>
         <Icon name={STATUS_ICON[tx.status]} size={64} color={colors.solid} />
         <AppText variant="title" center>
@@ -69,6 +74,7 @@ export default function ReceiptScreen() {
       </Card>
 
       <View style={styles.actions}>
+        {tx.status === 'pending' && <Button label="Check purchase status" loading={detail.loading} onPress={detail.verify} />}
         {tx.status === 'success' && (
           <Button label="Share receipt" variant="outline" icon="share" onPress={() => shareTransaction(tx)} />
         )}

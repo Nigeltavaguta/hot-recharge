@@ -1,0 +1,14 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const app = require('../app.json').expo;
+const eas = require('../eas.json');
+assert.match(app.android.package, /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/);
+assert.ok(app.android.versionCode >= 1);
+assert.equal(eas.build.competition.android.buildType, 'apk');
+assert.equal(eas.build.competition.env.EXPO_PUBLIC_API_MODE, 'mock');
+const versions = fs.readFileSync(path.join(__dirname, '../node_modules/react-native/gradle/libs.versions.toml'), 'utf8');
+const minimum = Number(versions.match(/minSdk\s*=\s*"(\d+)"/)[1]);
+assert.ok(minimum <= 24, `Installed React Native requires API ${minimum}; API 24 migration review needed.`);
+console.log(`React Native native minimum: API ${minimum}. Package: ${app.android.package}. Competition profile: APK, mock mode.`);
+console.log('This source/config check does not validate the merged APK manifest, signing, installation or <2GB device performance.');

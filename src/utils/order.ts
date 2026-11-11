@@ -16,6 +16,8 @@ export interface OrderSummary {
 /** Everything the confirm screen needs to show, worked out from the order. */
 export function summarizeOrder(order: Order): OrderSummary {
   switch (order.kind) {
+    case 'payment':
+      return { title: 'Payment', rows: [{ label: 'Account', value: order.target }], amount: order.amount, fee: 0, total: order.amount };
     case 'airtime':
       return {
         title: `${networkName(order.network)} airtime`,

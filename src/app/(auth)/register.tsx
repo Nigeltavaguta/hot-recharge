@@ -21,10 +21,10 @@ export default function RegisterScreen() {
         <View style={styles.done}>
           <Icon name="success" size={64} color={theme.success} />
           <AppText variant="title" center>
-            Account created
+            Continue on the HOT website
           </AppText>
           <AppText tone="muted" center>
-            You can now sign in with your mobile number and password.
+            Complete the official registration process in your browser. This app has not created an account.
           </AppText>
         </View>
         <Button label="Go to sign in" onPress={() => router.back()} />

@@ -4,6 +4,7 @@ import type { Network } from '@/models';
 import { setDraftOrder } from '@/state/walletStore';
 import { parseAmount } from '@/utils/format';
 import { detectNetwork, isValidMobile, normalizeMobile } from '@/utils/phone';
+import { useProducts } from './useProducts';
 
 export function useAirtimeViewModel(initialNumber = '') {
   const [number, setNumberText] = useState(initialNumber);
@@ -13,6 +14,7 @@ export function useAirtimeViewModel(initialNumber = '') {
   const [showErrors, setShowErrors] = useState(false);
 
   const network = chosenNetwork ?? detectNetwork(number);
+  const catalogue = useProducts('airtime', network);
   const amount = parseAmount(amountText);
 
   const numberError = isValidMobile(number) ? undefined : 'Enter a valid mobile number, e.g. 0772345678';
@@ -27,15 +29,16 @@ export function useAirtimeViewModel(initialNumber = '') {
 
   /** Saves the order for the confirm screen. Returns false when the form is not valid yet. */
   function submit(): boolean {
-    if (numberError || !network || !amount) {
+    if (numberError || !network || !amount || !catalogue.selected) {
       setShowErrors(true);
       return false;
     }
-    setDraftOrder({ kind: 'airtime', network, number: normalizeMobile(number), amount });
+    setDraftOrder({ kind: 'airtime', network, number: normalizeMobile(number), amount, productId: catalogue.selected.id });
     return true;
   }
 
   return {
+    catalogue,
     number,
     setNumber,
     network,

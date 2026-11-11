@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+logging:
+  structured:
+    format:
+      console: logstash
+  level:
+    root: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN

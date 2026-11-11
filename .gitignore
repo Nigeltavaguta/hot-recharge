@@ -41,3 +41,20 @@ example
 # generated native folders
 /ios
 /android
+
+# Local tooling, dependency cache and backend secrets/output
+.tools/
+.npm-cache/
+backend/target/
+backend/.env
+.env
+!.env.example
+!backend/.env.example
+
+# Local audit and planning documents
+/FRONTEND_BACKEND_AUDIT.md
+/BACKEND_ARCHITECTURE.md
+/API_INTEGRATION_PLAN.md
+/HOT_V3_API_MAPPING.md
+/BACKEND_TASKS.md
+/DEPLOYMENT_GUIDE.md

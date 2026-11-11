@@ -77,7 +77,7 @@ export function WalletHero({
             {greeting()}
           </AppText>
           <AppText variant="heading" style={{ color: top.text }} numberOfLines={1}>
-            {user?.firstName ?? 'Welcome'}
+            {user?.firstName || 'HOT account'}
           </AppText>
         </View>
         <Pressable

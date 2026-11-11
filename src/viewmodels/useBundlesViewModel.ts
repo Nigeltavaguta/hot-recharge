@@ -22,6 +22,8 @@ export function useBundlesViewModel(initialNumber = '') {
   useEffect(() => {
     if (!network) return;
     let cancelled = false;
+    // The resource changes with network selection; clear stale choices before asynchronous loading.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setLoadError(null);
     setBundles([]);

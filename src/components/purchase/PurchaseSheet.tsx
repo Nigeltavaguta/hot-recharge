@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Animated, KeyboardAvoidingView, Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
+import { Button } from '@/components/Button';
 import { Card, DetailRow, Notice } from '@/components/Card';
 import { Icon } from '@/components/Icon';
 import { PurchaseFooter } from '@/components/PurchaseFooter';
@@ -18,11 +19,13 @@ import { AirtimeForm } from './AirtimeForm';
 import { BundleForm } from './BundleForm';
 import { SheetBody } from './SheetBody';
 import { ZesaForm } from './ZesaForm';
+import { PaymentForm } from './PaymentForm';
 
 const TITLES: Record<PurchaseKind, string> = {
   airtime: 'Buy airtime',
   bundle: 'Buy a bundle',
   zesa: 'Buy ZESA token',
+  payment: 'Make a payment',
 };
 
 /**
@@ -69,6 +72,7 @@ export function PurchaseSheet() {
             {request.kind === 'airtime' && <AirtimeForm prefill={request.prefill} />}
             {request.kind === 'bundle' && <BundleForm prefill={request.prefill} />}
             {request.kind === 'zesa' && <ZesaForm prefill={request.prefill} />}
+            {request.kind === 'payment' && <PaymentForm />}
           </View>
 
           {vm.summary && (
@@ -78,9 +82,9 @@ export function PurchaseSheet() {
                   <PurchaseFooter
                     totalLabel="You pay"
                     total={vm.summary.total}
-                    buttonLabel={`Pay ${formatMoney(vm.summary.total)}`}
-                    loading={vm.processing}
-                    disabled={vm.insufficient}
+                    buttonLabel={vm.quoting ? 'Getting quote…' : `Pay ${formatMoney(vm.summary.total, vm.currency)}`}
+                    loading={vm.processing || vm.quoting}
+                    disabled={vm.insufficient || !vm.quote}
                     onPress={pay}
                   />
                 }>
@@ -93,9 +97,9 @@ export function PurchaseSheet() {
                   {vm.summary.rows.map((row) => (
                     <DetailRow key={row.label} label={row.label} value={row.value} />
                   ))}
-                  <DetailRow label="Amount" value={formatMoney(vm.summary.amount)} />
-                  <DetailRow label="Fee" value={formatMoney(vm.summary.fee)} />
-                  <DetailRow label="Total" value={formatMoney(vm.summary.total)} strong />
+                  <DetailRow label="Amount" value={formatMoney(vm.summary.amount, vm.currency)} />
+                  <DetailRow label="Fee" value={formatMoney(vm.summary.fee, vm.currency)} />
+                  <DetailRow label="Total" value={formatMoney(vm.summary.total, vm.currency)} strong />
                 </Card>
 
                 {vm.balance && (
@@ -107,6 +111,8 @@ export function PurchaseSheet() {
                   <Notice tone="warning" text="Your balance is too low for this purchase. Top up or lower the amount." />
                 )}
                 {vm.error && <Notice tone="danger" text={vm.error} />}
+                {vm.quote?.demonstration && <Notice tone="warning" text="DEMONSTRATION purchase. No real HOT transaction will be made." />}
+                {!vm.quote && !vm.quoting && <Button label="Refresh quote / check earlier purchase" variant="outline" onPress={vm.requote} />}
               </SheetBody>
             </View>
           )}

@@ -13,6 +13,8 @@ import { sessionStore, signOut } from '@/state/sessionStore';
 import { resetWallet } from '@/state/walletStore';
 import { space } from '@/theme/colors';
 import { useTheme } from '@/theme/useTheme';
+import { api } from '@/services';
+import { closePurchase } from '@/state/purchaseSheet';
 
 export default function ProfileScreen() {
   const user = useStore(sessionStore, (s) => s.user);
@@ -21,8 +23,10 @@ export default function ProfileScreen() {
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   function handleSignOut() {
+    closePurchase();
     resetWallet();
     signOut();
+    void api.logout().catch(() => { /* Local credentials are cleared even if server is unreachable. */ });
   }
 
   if (!user) return null;
@@ -40,7 +44,7 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.flex}>
           <AppText variant="heading">
-            {user.firstName} {user.lastName}
+            {`${user.firstName} ${user.lastName}`.trim() || 'HOT account'}
           </AppText>
           <AppText tone="muted">{user.mobile}</AppText>
         </View>

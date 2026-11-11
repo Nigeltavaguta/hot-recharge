@@ -17,7 +17,7 @@ export function codeOf(tx: Transaction): { label: string; value: string } | null
 export async function shareTransaction(tx: Transaction): Promise<void> {
   const code = codeOf(tx);
   const lines = [
-    `HOT Recharge - ${tx.title}`,
+    `${tx.demonstration ? 'DEMONSTRATION - ' : ''}HOT Recharge - ${tx.title}`,
     code ? `${code.label}: ${code.value}` : null,
     tx.units ? `Units: ${tx.units}` : null,
     `For: ${tx.recipient}`,
@@ -53,7 +53,7 @@ export function TokenCard({ tx, onPress }: TokenCardProps) {
       <View style={styles.top}>
         <View style={styles.flex}>
           <AppText variant="caption" style={styles.dim}>
-            {code.label.toUpperCase()}
+            {tx.demonstration ? 'DEMO ' : ''}{code.label.toUpperCase()}
           </AppText>
           <AppText variant="label" tone="onPrimary" numberOfLines={1}>
             {tx.recipient}

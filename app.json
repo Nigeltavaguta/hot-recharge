@@ -11,6 +11,10 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "zw.co.hotrecharge.competition",
+      "versionCode": 1,
+      "permissions": ["android.permission.INTERNET"],
+      "blockedPermissions": ["android.permission.RECORD_AUDIO", "android.permission.CAMERA", "android.permission.READ_CONTACTS"],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -32,11 +36,16 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "competitionSubmissionIdentifier": "HOT-{accountId}-{version}",
+      "competitionRound": 1
     }
   }
 }

@@ -3,7 +3,8 @@ import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Vie
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
-import { EmptyState } from '@/components/Card';
+import { EmptyState, Notice } from '@/components/Card';
+import { Button } from '@/components/Button';
 import { useTabBarSpace } from '@/components/TabBar';
 import { TransactionRow } from '@/components/TransactionRow';
 import { radius, space } from '@/theme/colors';
@@ -39,6 +40,7 @@ export default function ActivityScreen() {
       ListHeaderComponent={
         <View style={styles.header}>
           <AppText variant="title">Activity</AppText>
+          {vm.error && <Notice tone="danger" text={vm.error} />}
           <View accessibilityRole="tablist" style={styles.filters}>
             {ACTIVITY_FILTERS.map((f) => {
               const selected = vm.filter === f.id;
@@ -71,6 +73,7 @@ export default function ActivityScreen() {
           <ActivityIndicator color={theme.primary} style={styles.loading} />
         )
       }
+      ListFooterComponent={vm.nextCursor ? <Button label="Load more transactions" variant="outline" loading={vm.loadingMore} onPress={vm.loadMore} /> : undefined}
     />
   );
 }

@@ -1,0 +1,23 @@
+{
+  "cli": { "version": ">= 16.0.0", "appVersionSource": "local" },
+  "build": {
+    "development": {
+      "distribution": "internal",
+      "android": { "buildType": "apk", "gradleCommand": ":app:assembleDebug" },
+      "env": { "EXPO_PUBLIC_API_MODE": "mock" }
+    },
+    "competition": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_API_MODE": "mock" }
+    },
+    "backend-demo": {
+      "extends": "competition",
+      "env": { "EXPO_PUBLIC_API_MODE": "live" }
+    },
+    "production": {
+      "android": { "buildType": "app-bundle" },
+      "env": { "EXPO_PUBLIC_API_MODE": "live" }
+    }
+  }
+}

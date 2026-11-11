@@ -1,0 +1,8 @@
+.git
+.tools
+.npm-cache
+backend
+.env
+.env.local
+.env.production.local
+node_modules

@@ -18,7 +18,7 @@ export function normalizeMobile(input: string): string {
   let digits = input.replace(/\D/g, '');
   if (digits.startsWith('263')) digits = digits.slice(3);
   if (digits.length > 0 && !digits.startsWith('0')) digits = `0${digits}`;
-  return digits.slice(0, 10);
+  return digits;
 }
 
 export function isValidMobile(input: string): boolean {

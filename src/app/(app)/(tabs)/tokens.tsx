@@ -2,7 +2,8 @@ import { router } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { EmptyState } from '@/components/Card';
+import { EmptyState, Notice } from '@/components/Card';
+import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { useTabBarSpace } from '@/components/TabBar';
 import { TokenCard } from '@/components/TokenCard';
@@ -23,6 +24,7 @@ export default function TokensScreen() {
       </View>
 
       {!vm.loaded && <ActivityIndicator color={theme.primary} />}
+      {vm.error && <Notice tone="danger" text={vm.error} />}
 
       {vm.tokens.map((tx) => (
         <TokenCard
@@ -39,6 +41,7 @@ export default function TokensScreen() {
           text="When you buy a ZESA token or a PIN it is kept here so you never lose it."
         />
       )}
+      {vm.vaultCursor && <Button label="Load more tokens and PINs" variant="outline" loading={vm.loadingMore} onPress={vm.loadMoreVault} />}
     </Screen>
   );
 }

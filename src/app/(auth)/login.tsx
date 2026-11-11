@@ -10,9 +10,13 @@ import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
 import { palette, radius, space } from '@/theme/colors';
 import { useLoginViewModel } from '@/viewmodels/useLoginViewModel';
+import { apiMode } from '@/config/api';
+import { useStore } from '@/state/createStore';
+import { sessionStore } from '@/state/sessionStore';
 
 export default function LoginScreen() {
   const vm = useLoginViewModel();
+  const restoreError = useStore(sessionStore, s => s.restoreError);
   const insets = useSafeAreaInsets();
 
   return (
@@ -28,6 +32,8 @@ export default function LoginScreen() {
       </View>
 
       {vm.errors.form && <Notice tone="danger" text={vm.errors.form} />}
+      {restoreError && <Notice tone="warning" text={restoreError} />}
+      <Notice tone="info" text={apiMode === 'mock' ? 'DEMONSTRATION mode — no real balances or purchases.' : 'Connected backend mode. Simulated results are labelled DEMONSTRATION. Stub password: demo-password.'} />
 
       <TextField
         label="Mobile number"

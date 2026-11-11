@@ -1,5 +1,5 @@
 import type { AppNotification, Bundle, Network, Order, StockAccount, Transaction, User } from '@/models';
-import { ZESA_FEE } from '@/utils/order';
+import { summarizeOrder, ZESA_FEE } from '@/utils/order';
 
 import { ApiError, type HotApi } from './hotApi';
 
@@ -91,6 +91,8 @@ const NOTIFICATIONS: AppNotification[] = [
 ];
 
 let sequence = 43;
+const originalAccounts = accounts.map(a => ({ ...a }));
+const originalTransactions = transactions.map(t => ({ ...t, demonstration: true }));
 
 function randomDigits(length: number): string {
   let out = '';
@@ -98,8 +100,8 @@ function randomDigits(length: number): string {
   return out;
 }
 
-function debit(amount: number): void {
-  const wallet = accounts[0];
+function debit(amount: number, kind: Order['kind']): void {
+  const wallet = accounts.find(a => a.id === (kind === 'zesa' ? 'usd-zesa' : 'usd'))!;
   if (wallet.balance < amount) {
     throw new ApiError('Not enough balance in your USD Wallet for this purchase.');
   }
@@ -112,6 +114,8 @@ function debit(amount: number): void {
 
 function describe(order: Order): Pick<Transaction, 'type' | 'title' | 'recipient' | 'amount' | 'fee' | 'network'> {
   switch (order.kind) {
+    case 'payment':
+      return { type: 'payment', title: 'DEMO payment PIN', recipient: order.target, amount: order.amount, fee: 0 };
     case 'airtime':
       return {
         type: 'airtime', title: `${NETWORK_NAMES[order.network]} airtime`, recipient: order.number,
@@ -132,20 +136,49 @@ function describe(order: Order): Pick<Transaction, 'type' | 'title' | 'recipient
 }
 
 export const mockHotApi: HotApi = {
+  async restoreSession() { return null; },
+  async logout() {},
+  async getProducts() {
+    return [
+      ...(['econet', 'netone', 'telecel'] as const).map(network => ({ id: `mock-airtime-${network}`, category: 'airtime' as const, network, name: `DEMO ${network} airtime`, currency: 'USD', stockAccountId: 'usd', minAmount: '0.10', maxAmount: '100.00', increment: '0.01', requiredOptions: [], customerLookupSupported: false })),
+      { id: 'mock-zesa', category: 'zesa' as const, network: null, name: 'DEMO ZESA', currency: 'USD', stockAccountId: 'usd-zesa', minAmount: '5.00', maxAmount: '100.00', increment: '0.01', requiredOptions: ['NotifyNumber'], customerLookupSupported: true },
+      { id: 'mock-payment', category: 'payment' as const, network: null, name: 'DEMO subscription PIN', currency: 'USD', stockAccountId: 'usd', minAmount: '1.00', maxAmount: '100.00', increment: '0.01', requiredOptions: [], customerLookupSupported: false },
+    ];
+  },
+  async getVault() { return transactions.filter(t => t.status === 'success' && (t.token || t.pin)).map(t => ({ ...t, demonstration: true })); },
+  async getTransaction(id) {
+    const tx = transactions.find(t => t.id === id);
+    if (!tx) throw new ApiError('Receipt not found.');
+    return { ...tx, demonstration: true };
+  },
+  async verifyTransaction(id) {
+    const tx = await mockHotApi.getTransaction(id);
+    if (tx.status === 'pending') { tx.status = 'success'; tx.message = 'Demonstration status confirmed.'; transactions = transactions.map(t => t.id === id ? tx : t); }
+    return tx;
+  },
+  async quote(order) {
+    const summary = summarizeOrder(order);
+    const account = accounts.find(a => a.id === (order.kind === 'zesa' ? 'usd-zesa' : 'usd'))!;
+    return { id: `mock-${Date.now()}`, expiresAt: new Date(Date.now() + 120000).toISOString(), category: order.kind, title: summary.title, rows: summary.rows, amount: summary.amount.toFixed(2), fee: summary.fee.toFixed(2), total: summary.total.toFixed(2), currency: 'USD', stockAccountId: account.id, stockAccountName: account.name, availableBalance: account.balance.toFixed(2), target: describe(order).recipient, demonstration: true };
+  },
   async login(input): Promise<User> {
     await delay(700);
     if (input.password === 'wrong') throw new ApiError('Incorrect mobile number or password.');
+    accounts = originalAccounts.map(a => ({ ...a }));
+    transactions = originalTransactions.map(t => ({ ...t }));
     return {
       accountId: '123456789',
       firstName: 'Demo',
       lastName: 'User',
       mobile: input.mobile,
       email: 'demo@example.com',
+      demonstration: true,
     };
   },
 
   async register() {
     await delay(900);
+    return { status: 'externalOnboardingRequired', url: 'https://www.hot.co.zw/', message: 'Continue registration on the official HOT website. This app has not created an account.' };
   },
 
   async getStockAccounts() {
@@ -155,7 +188,7 @@ export const mockHotApi: HotApi = {
 
   async getTransactions() {
     await delay(450);
-    return transactions;
+    return transactions.map(t => ({ ...t, demonstration: true }));
   },
 
   async getNotifications() {
@@ -177,7 +210,7 @@ export const mockHotApi: HotApi = {
   async purchase(order) {
     await delay(1200);
     const details = describe(order);
-    debit(details.amount + details.fee);
+    debit(details.amount + details.fee, order.kind);
 
     const tx: Transaction = {
       ...details,
@@ -186,11 +219,13 @@ export const mockHotApi: HotApi = {
       currency: 'USD',
       date: new Date().toISOString(),
       status: 'success',
+      demonstration: true,
     };
     if (order.kind === 'zesa') {
       tx.token = randomDigits(20);
       tx.units = `${(order.amount * 1.42).toFixed(1)} kWh`;
     }
+    if (order.kind === 'payment') tx.pin = 'DEMO-PIN-1234';
     transactions = [tx, ...transactions];
     return tx;
   },

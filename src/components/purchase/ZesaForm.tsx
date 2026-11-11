@@ -13,6 +13,7 @@ import { METER_LENGTH } from '@/utils/phone';
 import { useZesaViewModel } from '@/viewmodels/useZesaViewModel';
 
 import { SheetBody } from './SheetBody';
+import { ProductPicker } from './ProductPicker';
 
 export function ZesaForm({ prefill }: { prefill?: string }) {
   const vm = useZesaViewModel(prefill);
@@ -29,6 +30,7 @@ export function ZesaForm({ prefill }: { prefill?: string }) {
           onPress={vm.submit}
         />
       }>
+      <ProductPicker {...vm.catalogue} />
       <TextField
         label="Meter number"
         icon="zesa"
@@ -62,7 +64,8 @@ export function ZesaForm({ prefill }: { prefill?: string }) {
         </>
       )}
 
-      <AmountPicker value={vm.amountText} onChange={vm.setAmountText} error={vm.errors.amount} />
+      <TextField label="Notification mobile number" keyboardType="phone-pad" value={vm.notifyNumber} onChangeText={vm.setNotifyNumber} error={vm.errors.notifyNumber} />
+      <AmountPicker currency={vm.catalogue.selected?.currency} value={vm.amountText} onChange={vm.setAmountText} error={vm.errors.amount} />
     </SheetBody>
   );
 }

@@ -1,0 +1,46 @@
+server:
+  port: ${PORT:8080}
+  address: 0.0.0.0
+  error:
+    include-message: never
+    include-stacktrace: never
+spring:
+  application:
+    name: hot-recharge-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/hotrecharge}
+    username: ${SPRING_DATASOURCE_USERNAME:hotrecharge}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      maximum-pool-size: 5
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+logging:
+  level:
+    root: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
+hot:
+  mode: ${HOT_CLIENT_MODE:stub}
+  transactions-enabled: ${HOT_TRANSACTIONS_ENABLED:false}
+  base-url: ${HOT_BASE_URL:https://ssl.hot.co.zw/api/v3}
+  encryption-key: ${APP_CREDENTIAL_ENCRYPTION_KEY:}
+  connect-timeout-ms: ${HOT_CONNECT_TIMEOUT_MS:3000}
+  read-timeout-ms: ${HOT_READ_TIMEOUT_MS:20000}
+  allowed-origins: ${APP_ALLOWED_ORIGINS:http://localhost:8081}
+  allowed-hosts: ${HOT_ALLOWED_HOSTS:ssl.hot.co.zw}

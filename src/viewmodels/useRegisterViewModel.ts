@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Linking } from 'react-native';
 
 import type { RegisterInput } from '@/models';
 import { api, errorMessage } from '@/services';
@@ -46,14 +47,17 @@ export function useRegisterViewModel() {
 
     setLoading(true);
     try {
-      await api.register({
+      const result = await api.register({
         firstName: values.firstName.trim(),
         lastName: values.lastName.trim(),
         mobile: normalizeMobile(values.mobile),
         email: values.email.trim(),
         password: values.password,
       });
-      setDone(true);
+      if (result.status === 'externalOnboardingRequired' && result.url === 'https://www.hot.co.zw/') {
+        await Linking.openURL(result.url);
+        setDone(true);
+      }
     } catch (error) {
       setErrors({ form: errorMessage(error) });
     } finally {

@@ -9,6 +9,7 @@ import { space } from '@/theme/colors';
 import { useAirtimeViewModel } from '@/viewmodels/useAirtimeViewModel';
 
 import { SheetBody } from './SheetBody';
+import { ProductPicker } from './ProductPicker';
 
 export function AirtimeForm({ prefill }: { prefill?: string }) {
   const vm = useAirtimeViewModel(prefill);
@@ -38,7 +39,8 @@ export function AirtimeForm({ prefill }: { prefill?: string }) {
         )}
       </View>
 
-      <AmountPicker value={vm.amountText} onChange={vm.setAmountText} error={vm.errors.amount} />
+      <ProductPicker {...vm.catalogue} />
+      <AmountPicker currency={vm.catalogue.selected?.currency} value={vm.amountText} onChange={vm.setAmountText} error={vm.errors.amount} />
     </SheetBody>
   );
 }

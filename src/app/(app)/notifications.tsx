@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { Card, EmptyState } from '@/components/Card';
+import { Card, EmptyState, Notice } from '@/components/Card';
 import { Icon } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
 import { useStore } from '@/state/createStore';
@@ -16,6 +16,7 @@ export default function NotificationsScreen() {
   const notifications = useStore(walletStore, (s) => s.notifications);
   const loading = useStore(walletStore, (s) => s.loading);
   const loaded = useStore(walletStore, (s) => s.loaded);
+  const error = useStore(walletStore, s => s.error);
 
   // Remember which ones were unread on arrival, so they stay highlighted while the user reads them.
   const [unreadOnOpen] = useState(() => new Set(notifications.filter((n) => !n.read).map((n) => n.id)));
@@ -27,6 +28,7 @@ export default function NotificationsScreen() {
   return (
     <Screen refreshing={loading && loaded} onRefresh={refreshWallet}>
       {!loaded && <ActivityIndicator color={theme.primary} />}
+      {error && <Notice tone="danger" text={error} />}
 
       {notifications.map((n) => {
         const unread = unreadOnOpen.has(n.id);
