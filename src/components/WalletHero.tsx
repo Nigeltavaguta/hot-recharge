@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { StockAccount, User } from '@/models';
 import { palette, radius, space } from '@/theme/colors';
+import { fonts } from '@/theme/fonts';
 import { useTheme } from '@/theme/useTheme';
 import { formatMoney, greeting, relativeTime } from '@/utils/format';
 
@@ -18,8 +19,8 @@ const DIM = '#FFD9D5';
  * dark mode fades down from the dark page colour (so it uses light text).
  */
 const TOP = {
-  light: { tint: '#FFF4F2', text: '#1B1B1F', muted: '#4A2320', button: 'rgba(255,255,255,0.7)', icon: palette.redDark },
-  dark: { tint: '#16161A', text: '#FFFFFF', muted: '#E0C9C6', button: GLASS, icon: palette.white },
+  light: { tint: '#FFF4F2', text: '#1B1B1F', muted: '#4A2320', button: '#FFFFFF', icon: '#1B1B1F' },
+  dark: { tint: '#16161A', text: '#FFFFFF', muted: '#E0C9C6', button: '#2C2C33', icon: '#FFFFFF' },
 } as const;
 
 interface WalletHeroProps {
@@ -33,6 +34,7 @@ interface WalletHeroProps {
   onViewBalances: () => void;
   unreadCount: number;
   onOpenNotifications: () => void;
+  onOpenProfile: () => void;
 }
 
 /** The top of the home screen: greeting, main balance and other balances. */
@@ -46,6 +48,7 @@ export function WalletHero({
   onViewBalances,
   unreadCount,
   onOpenNotifications,
+  onOpenProfile,
 }: WalletHeroProps) {
   const insets = useSafeAreaInsets();
   const top = useTheme().dark ? TOP.dark : TOP.light;
@@ -67,27 +70,38 @@ export function WalletHero({
         },
       ]}>
       <View style={styles.topRow}>
-        <View style={styles.avatar}>
-          <AppText variant="heading" tone="onPrimary">
-            {user ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}` : ''}
-          </AppText>
-        </View>
-        <View style={styles.flex}>
-          <AppText variant="caption" style={{ color: top.muted }}>
-            {greeting()}
-          </AppText>
-          <AppText variant="heading" style={{ color: top.text }} numberOfLines={1}>
-            {user?.firstName || 'HOT account'}
-          </AppText>
-        </View>
+        {/* The whole greeting, not only the circle, opens the profile. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open your profile"
+          onPress={onOpenProfile}
+          style={({ pressed }) => [styles.person, pressed && styles.pressed]}>
+          <View style={styles.avatar}>
+            <AppText variant="heading" tone="onPrimary">
+              {user ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}` : ''}
+            </AppText>
+          </View>
+          <View style={styles.flex}>
+            <AppText variant="caption" style={{ color: top.muted }}>
+              {greeting()}
+            </AppText>
+            <AppText variant="heading" style={{ color: top.text }} numberOfLines={1}>
+              {user?.firstName || 'HOT account'}
+            </AppText>
+          </View>
+        </Pressable>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
           hitSlop={8}
           onPress={onOpenNotifications}
-          style={[styles.roundButton, { backgroundColor: top.button }]}>
-          <Icon name="bell" size={20} color={top.icon} />
-          {unreadCount > 0 && <View style={styles.badge} />}
+          style={({ pressed }) => [styles.roundButton, { backgroundColor: top.button }, pressed && styles.pressed]}>
+          <Icon name="bell" size={22} color={top.icon} />
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <AppText style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</AppText>
+            </View>
+          )}
         </Pressable>
       </View>
 
@@ -179,29 +193,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: palette.red,
-    marginRight: space.xs,
   },
+  person: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md },
+  pressed: { opacity: 0.6 },
+  // Same size as the avatar and fully solid, so the two ends of the row balance.
   roundButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#1B1B1F',
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
+  // Unread count, sitting on the rim of the button and overhanging it slightly.
   badge: {
     position: 'absolute',
-    top: 9,
-    right: 10,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: palette.flame,
-    borderWidth: 1.5,
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.red,
+    borderWidth: 2,
     borderColor: palette.white,
   },
+  badgeText: { fontSize: 11, lineHeight: 14, fontFamily: fonts.bold, color: palette.white },
   balance: { alignItems: 'center', gap: space.xs },
   inlineButton: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  amount: { fontSize: 38, lineHeight: 46, fontWeight: '800' },
+  amount: { fontSize: 38, lineHeight: 46, fontFamily: fonts.extrabold },
   refreshPill: { minHeight: 28, paddingHorizontal: space.md, borderRadius: radius.pill, backgroundColor: GLASS },
   spinner: { transform: [{ scale: 0.7 }] },
   tiles: { flexDirection: 'row', gap: space.sm },

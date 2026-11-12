@@ -1,6 +1,7 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import type { Theme } from '@/theme/colors';
+import { fonts } from '@/theme/fonts';
 import { useTheme } from '@/theme/useTheme';
 
 type Variant = 'display' | 'title' | 'heading' | 'body' | 'label' | 'caption';
@@ -45,11 +46,11 @@ export function AppText({ variant = 'body', tone = 'default', center, style, ...
 }
 
 const styles = StyleSheet.create({
-  display: { fontSize: 30, lineHeight: 36, fontWeight: '800' },
-  title: { fontSize: 22, lineHeight: 28, fontWeight: '800' },
-  heading: { fontSize: 16, lineHeight: 22, fontWeight: '700' },
-  body: { fontSize: 15, lineHeight: 21, fontWeight: '400' },
-  label: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
-  caption: { fontSize: 12, lineHeight: 16, fontWeight: '500' },
+  display: { fontSize: 30, lineHeight: 36, fontFamily: fonts.extrabold },
+  title: { fontSize: 22, lineHeight: 28, fontFamily: fonts.extrabold },
+  heading: { fontSize: 16, lineHeight: 22, fontFamily: fonts.bold },
+  body: { fontSize: 15, lineHeight: 21, fontFamily: fonts.regular },
+  label: { fontSize: 14, lineHeight: 20, fontFamily: fonts.semibold },
+  caption: { fontSize: 12, lineHeight: 16, fontFamily: fonts.medium },
   center: { textAlign: 'center' },
 });

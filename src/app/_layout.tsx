@@ -1,4 +1,6 @@
+import { useFonts } from '@expo-google-fonts/manrope';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -6,10 +8,19 @@ import { api, errorMessage } from '@/services';
 
 import { useStore } from '@/state/createStore';
 import { sessionStore, signIn } from '@/state/sessionStore';
+import { fontAssets } from '@/theme/fonts';
 import { useTheme } from '@/theme/useTheme';
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
+  // On a font load error, fall back to system fonts rather than blocking the app.
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
+  const fontsDone = fontsLoaded || fontError !== null;
+  useEffect(() => {
+    if (fontsDone) SplashScreen.hideAsync();
+  }, [fontsDone]);
   useEffect(() => {
     let active = true;
     api.restoreSession().then(user => { if (active && user) signIn(user); })
@@ -33,6 +44,7 @@ export default function RootLayout() {
     },
   };
 
+  if (!fontsDone) return null;
   if (!ready) return <View style={{ flex: 1, justifyContent: 'center', backgroundColor: theme.bg }}><ActivityIndicator /></View>;
   return (
     <ThemeProvider value={navigationTheme}>
