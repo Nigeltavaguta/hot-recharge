@@ -3,22 +3,21 @@ import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { Button } from '@/components/Button';
-import { Card, DetailRow } from '@/components/Card';
-import { Icon } from '@/components/Icon';
+import { Card } from '@/components/Card';
+import { ListRow } from '@/components/ListRow';
 import { Screen } from '@/components/Screen';
 import { useTabBarSpace } from '@/components/TabBar';
-import { useStore } from '@/state/createStore';
-import { sessionStore, signOut } from '@/state/sessionStore';
-import { resetWallet } from '@/state/walletStore';
-import { space } from '@/theme/colors';
-import { useTheme } from '@/theme/useTheme';
 import { api } from '@/services';
+import { useStore } from '@/state/createStore';
 import { closePurchase } from '@/state/purchaseSheet';
+import { sessionStore, signOut } from '@/state/sessionStore';
+import { resetWallet, walletStore } from '@/state/walletStore';
+import { palette, radius, space } from '@/theme/colors';
 
 export default function ProfileScreen() {
   const user = useStore(sessionStore, (s) => s.user);
-  const theme = useTheme();
+  const notifications = useStore(walletStore, (s) => s.notifications);
+  const accounts = useStore(walletStore, (s) => s.accounts);
   const tabBarSpace = useTabBarSpace();
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -31,40 +30,61 @@ export default function ProfileScreen() {
 
   if (!user) return null;
 
+  const fullName = `${user.firstName} ${user.lastName}`.trim() || 'HOT account';
+  const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase() || 'H';
+  const unread = notifications.filter((n) => !n.read).length;
+
   return (
     <Screen padTop bottomSpace={tabBarSpace}>
-      <AppText variant="title">Profile</AppText>
-
-      <Card style={styles.person}>
-        <View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}>
-          <AppText variant="title" tone="link">
-            {user.firstName.charAt(0)}
-            {user.lastName.charAt(0)}
+      <View style={styles.person}>
+        <View style={styles.avatar}>
+          <AppText variant="display" tone="onPrimary">
+            {initials}
           </AppText>
         </View>
-        <View style={styles.flex}>
-          <AppText variant="heading">
-            {`${user.firstName} ${user.lastName}`.trim() || 'HOT account'}
-          </AppText>
-          <AppText tone="muted">{user.mobile}</AppText>
-        </View>
-      </Card>
-
-      <Card>
-        <DetailRow label="Account ID" value={user.accountId} />
-        <DetailRow label="Email" value={user.email} />
-        <DetailRow label="Mobile" value={user.mobile} />
-      </Card>
-
-      <Card onPress={() => router.push('/balances')} accessibilityLabel="View all balances" style={styles.link}>
-        <Icon name="wallet" size={22} color={theme.accent} />
-        <AppText variant="label" style={styles.flex}>
-          All balances
+        <AppText variant="title" center>
+          {fullName}
         </AppText>
-        <Icon name="chevronRight" size={16} color={theme.textFaint} />
-      </Card>
+        <AppText tone="muted" center>
+          {user.mobile}
+        </AppText>
+      </View>
 
-      <Button label="Sign out" variant="outline" icon="logout" onPress={handleSignOut} />
+      <View style={styles.group}>
+        <AppText variant="label" tone="faint" style={styles.groupTitle}>
+          Wallet
+        </AppText>
+        <Card style={styles.list}>
+          <ListRow
+            icon="wallet"
+            label="Balances"
+            value={accounts.length > 0 ? `${accounts.length} accounts` : undefined}
+            onPress={() => router.push('/balances')}
+          />
+          <ListRow
+            icon="bell"
+            label="Notifications"
+            value={unread > 0 ? `${unread} new` : undefined}
+            onPress={() => router.push('/notifications')}
+            last
+          />
+        </Card>
+      </View>
+
+      <View style={styles.group}>
+        <AppText variant="label" tone="faint" style={styles.groupTitle}>
+          Account
+        </AppText>
+        <Card style={styles.list}>
+          <ListRow icon="profile" label="Account ID" value={user.accountId} />
+          <ListRow icon="airtime" label="Mobile" value={user.mobile} />
+          <ListRow icon="mail" label="Email" value={user.email} last />
+        </Card>
+      </View>
+
+      <Card style={styles.list}>
+        <ListRow icon="logout" label="Sign out" danger onPress={handleSignOut} last />
+      </Card>
 
       <AppText variant="caption" tone="faint" center>
         HOT-{user.accountId}-{version}
@@ -74,8 +94,18 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  person: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
-  avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  link: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  person: { alignItems: 'center', gap: space.xs, paddingVertical: space.md },
+  avatar: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.red,
+    marginBottom: space.sm,
+  },
+  group: { gap: space.sm },
+  groupTitle: { marginLeft: space.xs },
+  // Rows bring their own spacing, so the card itself has none; overflow keeps the press highlight inside the corners.
+  list: { padding: 0, borderRadius: radius.xl, overflow: 'hidden' },
 });

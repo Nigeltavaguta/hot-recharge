@@ -15,7 +15,15 @@ export function AirtimeForm({ prefill }: { prefill?: string }) {
   const vm = useAirtimeViewModel(prefill);
 
   return (
-    <SheetBody footer={<PurchaseFooter total={vm.total} buttonLabel="Continue" onPress={vm.submit} />}>
+    <SheetBody
+      footer={
+        <PurchaseFooter
+          total={vm.total}
+          currency={vm.catalogue.selected?.currency}
+          buttonLabel="Continue"
+          onPress={vm.submit}
+        />
+      }>
       <TextField
         label="Mobile number"
         icon="airtime"
@@ -40,7 +48,12 @@ export function AirtimeForm({ prefill }: { prefill?: string }) {
       </View>
 
       <ProductPicker {...vm.catalogue} />
-      <AmountPicker currency={vm.catalogue.selected?.currency} value={vm.amountText} onChange={vm.setAmountText} error={vm.errors.amount} />
+      <AmountPicker
+        currency={vm.catalogue.selected?.currency}
+        value={vm.amountText}
+        onChange={vm.setAmountText}
+        error={vm.errors.amount}
+      />
     </SheetBody>
   );
 }

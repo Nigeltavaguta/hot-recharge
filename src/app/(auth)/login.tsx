@@ -1,95 +1,91 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
+import { AuthScaffold } from '@/components/auth/AuthScaffold';
 import { Button } from '@/components/Button';
 import { Notice } from '@/components/Card';
-import { Icon } from '@/components/Icon';
-import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
-import { palette, radius, space } from '@/theme/colors';
-import { useLoginViewModel } from '@/viewmodels/useLoginViewModel';
 import { apiMode } from '@/config/api';
 import { useStore } from '@/state/createStore';
 import { sessionStore } from '@/state/sessionStore';
+import { space } from '@/theme/colors';
+import { fonts } from '@/theme/fonts';
+import { useLoginViewModel } from '@/viewmodels/useLoginViewModel';
 
 export default function LoginScreen() {
   const vm = useLoginViewModel();
-  const restoreError = useStore(sessionStore, s => s.restoreError);
-  const insets = useSafeAreaInsets();
+  const restoreError = useStore(sessionStore, (s) => s.restoreError);
 
   return (
-    <Screen>
-      <View style={[styles.hero, { marginTop: insets.top }]}>
-        <View style={styles.logo}>
-          <Icon name="zesa" size={26} color={palette.white} />
-        </View>
-        <AppText variant="title" tone="onPrimary">
-          HOT Recharge
-        </AppText>
-        <AppText style={styles.heroText}>Sign in to buy airtime, bundles and ZESA tokens.</AppText>
-      </View>
+    <AuthScaffold heroFraction={0.46} heroMin={300} heroMax={440}>
+          <View style={styles.headline}>
+            <AppText style={styles.title} accessibilityRole="header">
+              Welcome back
+            </AppText>
+            <AppText tone="muted">Sign in to buy airtime, bundles and ZESA tokens.</AppText>
+          </View>
 
-      {vm.errors.form && <Notice tone="danger" text={vm.errors.form} />}
-      {restoreError && <Notice tone="warning" text={restoreError} />}
-      <Notice tone="info" text={apiMode === 'mock' ? 'DEMONSTRATION mode — no real balances or purchases.' : 'Connected backend mode. Simulated results are labelled DEMONSTRATION. Stub password: demo-password.'} />
+          {vm.errors.form && <Notice tone="danger" text={vm.errors.form} />}
+          {restoreError && <Notice tone="warning" text={restoreError} />}
 
-      <TextField
-        label="Mobile number"
-        icon="airtime"
-        placeholder="0772345678"
-        keyboardType="phone-pad"
-        autoComplete="tel"
-        returnKeyType="next"
-        value={vm.mobile}
-        onChangeText={vm.setMobile}
-        error={vm.errors.mobile}
-      />
-      <TextField
-        label="Password"
-        icon="lock"
-        placeholder="Your password"
-        password
-        autoCapitalize="none"
-        autoComplete="current-password"
-        returnKeyType="go"
-        onSubmitEditing={vm.submit}
-        value={vm.password}
-        onChangeText={vm.setPassword}
-        error={vm.errors.password}
-      />
+          <TextField
+            filled
+            label="Mobile number"
+            icon="airtime"
+            placeholder="0772 345 678"
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            returnKeyType="next"
+            value={vm.mobile}
+            onChangeText={vm.setMobile}
+            error={vm.errors.mobile}
+          />
+          <TextField
+            filled
+            label="Password"
+            icon="lock"
+            placeholder="Your password"
+            password
+            autoCapitalize="none"
+            autoComplete="current-password"
+            returnKeyType="go"
+            onSubmitEditing={vm.submit}
+            value={vm.password}
+            onChangeText={vm.setPassword}
+            error={vm.errors.password}
+          />
 
-      <Button label="Sign in" loading={vm.loading} onPress={vm.submit} />
+          <Button label="Sign in" loading={vm.loading} onPress={vm.submit} style={styles.submit} />
 
-      <View style={styles.registerRow}>
-        <AppText tone="muted">New to HOT Recharge?</AppText>
-        <Pressable accessibilityRole="button" hitSlop={12} onPress={() => router.push('/register')}>
-          <AppText variant="heading" tone="link">
-            Create an account
-          </AppText>
-        </Pressable>
-      </View>
-    </Screen>
+          <View style={styles.linkRow}>
+            <AppText tone="muted">New to HOT Recharge?</AppText>
+            <Pressable accessibilityRole="button" hitSlop={12} onPress={() => router.push('/register')}>
+              <AppText variant="heading" tone="link">
+                Create an account
+              </AppText>
+            </Pressable>
+          </View>
+
+          {apiMode === 'mock' && (
+            <AppText variant="caption" tone="faint" center style={styles.footnote}>
+              Demo mode · no real balances or purchases
+            </AppText>
+          )}
+    </AuthScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    backgroundColor: palette.red,
-    borderRadius: radius.xl,
-    padding: space.xxl,
-    gap: space.sm,
-  },
-  logo: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.lg,
+  headline: { gap: space.xs },
+  title: { fontSize: 30, lineHeight: 36, fontFamily: fonts.extrabold },
+  submit: { marginTop: space.xs },
+  linkRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    marginBottom: space.sm,
+    gap: space.xs,
   },
-  heroText: { color: '#FFE3E0' },
-  registerRow: { alignItems: 'center', gap: space.xs, paddingTop: space.sm },
+  footnote: { marginTop: 'auto', paddingTop: space.lg },
 });

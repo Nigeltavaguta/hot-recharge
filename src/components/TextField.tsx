@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { radius, space } from '@/theme/colors';
+import { fonts } from '@/theme/fonts';
 import { useTheme } from '@/theme/useTheme';
 
 import { AppText } from './AppText';
@@ -17,21 +18,25 @@ interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   /** Hides the text and adds a show/hide button. */
   password?: boolean;
   right?: ReactNode;
+  /** Soft filled box with no outline until focused. For forms that sit on a plain surface. */
+  filled?: boolean;
 }
 
-export function TextField({ label, icon, prefix, error, hint, password, right, ...input }: TextFieldProps) {
+export function TextField({ label, icon, prefix, error, hint, password, right, filled, ...input }: TextFieldProps) {
   const theme = useTheme();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(true);
 
-  const borderColor = error ? theme.danger : focused ? theme.accent : theme.border;
+  const restingBorder = filled ? 'transparent' : theme.border;
+  const borderColor = error ? theme.danger : focused ? theme.accent : restingBorder;
+  const backgroundColor = filled ? theme.surfaceAlt : theme.surface;
 
   return (
     <View style={styles.wrap}>
       <AppText variant="label" tone="muted">
         {label}
       </AppText>
-      <View style={[styles.box, { borderColor, backgroundColor: theme.surface }]}>
+      <View style={[styles.box, { borderColor, backgroundColor }]}>
         {icon && <Icon name={icon} size={20} color={theme.textFaint} />}
         {prefix && (
           <AppText variant="label" tone="faint">
@@ -88,5 +93,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.sm,
   },
-  input: { flex: 1, fontSize: 16, paddingVertical: space.md },
+  input: { flex: 1, fontSize: 16, fontFamily: fonts.regular, paddingVertical: space.md },
 });

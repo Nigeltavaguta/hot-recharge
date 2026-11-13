@@ -39,7 +39,8 @@ export function AmountPicker({ value, onChange, currency = 'USD', error }: Amoun
                 },
               ]}>
               <AppText variant="heading" tone={selected ? 'onPrimary' : 'default'}>
-                ${amount}
+                {/* The dollar sign only makes sense for USD; other currencies show the bare number. */}
+                {currency === 'USD' ? `$${amount}` : amount}
               </AppText>
             </Pressable>
           );

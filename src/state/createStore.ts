@@ -32,5 +32,7 @@ export function createStore<T extends object>(initial: T): Store<T> {
  * otherwise the component re-renders on every change.
  */
 export function useStore<T, S>(store: Store<T>, selector: (state: T) => S): S {
-  return useSyncExternalStore(store.subscribe, () => selector(store.get()));
+  const getSnapshot = () => selector(store.get());
+  // The third argument is only used when the web build renders pages on a server first.
+  return useSyncExternalStore(store.subscribe, getSnapshot, getSnapshot);
 }

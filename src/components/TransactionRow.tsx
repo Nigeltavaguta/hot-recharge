@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import type { Transaction, TxnStatus, TxnType } from '@/models';
 import { radius, space, type Theme } from '@/theme/colors';
 import { useTheme } from '@/theme/useTheme';
-import { formatMoney, relativeTime } from '@/utils/format';
+import { formatMoney, formatTime, relativeTime } from '@/utils/format';
 
 import { AppText } from './AppText';
 import { Card } from './Card';
@@ -15,6 +15,20 @@ const TYPE_ICON: Record<TxnType, IconName> = {
   zesa: 'zesa',
   payment: 'payment',
 };
+
+/** Each product has its own soft colour, the same one used on the Home buy buttons. */
+export function typeTint(theme: Theme, type: TxnType): { bg: string; fg: string } {
+  switch (type) {
+    case 'airtime':
+      return { bg: theme.primarySoft, fg: theme.primary };
+    case 'bundle':
+      return { bg: theme.accentSoft, fg: theme.accent };
+    case 'zesa':
+      return { bg: theme.warningSoft, fg: theme.warning };
+    case 'payment':
+      return { bg: theme.successSoft, fg: theme.success };
+  }
+}
 
 export const STATUS_LABEL: Record<TxnStatus, string> = {
   success: 'Successful',
@@ -53,26 +67,39 @@ export function StatusPill({ status }: { status: TxnStatus }) {
   );
 }
 
-export function TransactionRow({ tx, onPress }: { tx: Transaction; onPress: () => void }) {
+interface TransactionRowProps {
+  tx: Transaction;
+  onPress: () => void;
+  /** Show the clock time instead of "2h ago". Use in lists already grouped by day. */
+  showTime?: boolean;
+}
+
+export function TransactionRow({ tx, onPress, showTime }: TransactionRowProps) {
   const theme = useTheme();
+  const tint = typeTint(theme, tx.type);
+  const failed = tx.status === 'failed';
+
   return (
     <Card
       onPress={onPress}
       accessibilityLabel={`${tx.title}, ${formatMoney(tx.amount, tx.currency)}, ${STATUS_LABEL[tx.status]}`}
       style={styles.row}>
-      <View style={[styles.icon, { backgroundColor: theme.accentSoft }]}>
-        <Icon name={TYPE_ICON[tx.type]} size={20} color={theme.accent} />
+      <View style={[styles.icon, { backgroundColor: tint.bg }]}>
+        <Icon name={TYPE_ICON[tx.type]} size={20} color={tint.fg} />
       </View>
       <View style={styles.middle}>
         <AppText variant="label" numberOfLines={1}>
           {tx.title}
         </AppText>
         <AppText variant="caption" tone="faint" numberOfLines={1}>
-          {tx.recipient} · {relativeTime(tx.date)}
+          {tx.recipient} · {showTime ? formatTime(tx.date) : relativeTime(tx.date)}
         </AppText>
       </View>
       <View style={styles.end}>
-        <AppText variant="label">{formatMoney(tx.amount, tx.currency)}</AppText>
+        {/* A failed purchase took no money, so its amount is shown muted and crossed out. */}
+        <AppText variant="label" tone={failed ? 'faint' : 'default'} style={failed && styles.struck}>
+          {formatMoney(tx.amount, tx.currency)}
+        </AppText>
         <StatusPill status={tx.status} />
       </View>
     </Card>
@@ -81,9 +108,10 @@ export function TransactionRow({ tx, onPress }: { tx: Transaction; onPress: () =
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.lg, paddingHorizontal: 14 },
-  icon: { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   middle: { flex: 1, gap: 4 },
   end: { alignItems: 'flex-end', gap: 6 },
+  struck: { textDecorationLine: 'line-through' },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',

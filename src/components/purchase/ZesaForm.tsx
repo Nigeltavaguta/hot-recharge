@@ -25,6 +25,7 @@ export function ZesaForm({ prefill }: { prefill?: string }) {
         <PurchaseFooter
           totalLabel="Total (incl. fee)"
           total={vm.total}
+          currency={vm.catalogue.selected?.currency}
           buttonLabel="Continue"
           disabled={vm.verifying}
           onPress={vm.submit}
@@ -64,8 +65,22 @@ export function ZesaForm({ prefill }: { prefill?: string }) {
         </>
       )}
 
-      <TextField label="Notification mobile number" keyboardType="phone-pad" value={vm.notifyNumber} onChangeText={vm.setNotifyNumber} error={vm.errors.notifyNumber} />
-      <AmountPicker currency={vm.catalogue.selected?.currency} value={vm.amountText} onChange={vm.setAmountText} error={vm.errors.amount} />
+      <AmountPicker
+        currency={vm.catalogue.selected?.currency}
+        value={vm.amountText}
+        onChange={vm.setAmountText}
+        error={vm.errors.amount}
+      />
+
+      <TextField
+        label="Mobile number to notify"
+        icon="airtime"
+        placeholder="0772345678"
+        keyboardType="phone-pad"
+        value={vm.notifyNumber}
+        onChangeText={vm.setNotifyNumber}
+        error={vm.errors.notifyNumber}
+      />
     </SheetBody>
   );
 }

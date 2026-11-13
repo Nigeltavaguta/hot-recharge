@@ -7,7 +7,7 @@ import { Icon } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
 import { useStore } from '@/state/createStore';
 import { markNotificationsRead, refreshWallet, walletStore } from '@/state/walletStore';
-import { space } from '@/theme/colors';
+import { radius, space } from '@/theme/colors';
 import { useTheme } from '@/theme/useTheme';
 import { relativeTime } from '@/utils/format';
 
@@ -37,21 +37,18 @@ export default function NotificationsScreen() {
             <View style={[styles.icon, { backgroundColor: unread ? theme.primarySoft : theme.surfaceAlt }]}>
               <Icon name="bell" size={18} color={unread ? theme.primary : theme.textFaint} />
             </View>
-            <View style={styles.flex}>
+            <View style={styles.body}>
               <View style={styles.titleRow}>
-                <AppText variant="label" style={styles.flex}>
+                <AppText variant={unread ? 'heading' : 'label'} style={styles.flex}>
                   {n.title}
                 </AppText>
-                {unread && (
-                  <AppText variant="caption" tone="link">
-                    New
-                  </AppText>
-                )}
+                <AppText variant="caption" tone="faint">
+                  {relativeTime(n.date)}
+                </AppText>
+                {/* Unread is marked with a dot as well as bolder text, so it does not rely on colour. */}
+                {unread && <View accessibilityLabel="Unread" style={[styles.dot, { backgroundColor: theme.primary }]} />}
               </View>
               <AppText tone="muted">{n.body}</AppText>
-              <AppText variant="caption" tone="faint">
-                {relativeTime(n.date)}
-              </AppText>
             </View>
           </Card>
         );
@@ -66,7 +63,9 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  row: { flexDirection: 'row', gap: space.md },
-  icon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', gap: space.md, borderRadius: radius.xl, padding: space.lg },
+  icon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  body: { flex: 1, gap: space.xs },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  dot: { width: 8, height: 8, borderRadius: 4 },
 });

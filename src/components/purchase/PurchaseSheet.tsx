@@ -10,7 +10,7 @@ import { PurchaseFooter } from '@/components/PurchaseFooter';
 import { useStore } from '@/state/createStore';
 import { closePurchase, purchaseSheetStore, type PurchaseKind } from '@/state/purchaseSheet';
 import { setDraftOrder } from '@/state/walletStore';
-import { space } from '@/theme/colors';
+import { radius, space } from '@/theme/colors';
 import { useTheme } from '@/theme/useTheme';
 import { formatMoney } from '@/utils/format';
 import { useConfirmViewModel } from '@/viewmodels/useConfirmViewModel';
@@ -36,6 +36,7 @@ const TITLES: Record<PurchaseKind, string> = {
 export function PurchaseSheet() {
   const request = useStore(purchaseSheetStore, (s) => s.request);
   const vm = useConfirmViewModel();
+  const theme = useTheme();
   const confirming = vm.summary !== null;
 
   function goBack() {
@@ -82,6 +83,7 @@ export function PurchaseSheet() {
                   <PurchaseFooter
                     totalLabel="You pay"
                     total={vm.summary.total}
+                    currency={vm.currency}
                     buttonLabel={vm.quoting ? 'Getting quote…' : `Pay ${formatMoney(vm.summary.total, vm.currency)}`}
                     loading={vm.processing || vm.quoting}
                     disabled={vm.insufficient || !vm.quote}
@@ -93,26 +95,35 @@ export function PurchaseSheet() {
                   <AppText variant="title">{vm.summary.title}</AppText>
                 </View>
 
-                <Card>
+                <Card style={styles.card}>
                   {vm.summary.rows.map((row) => (
                     <DetailRow key={row.label} label={row.label} value={row.value} />
                   ))}
+                  <View style={[styles.divider, { backgroundColor: theme.border }]} />
                   <DetailRow label="Amount" value={formatMoney(vm.summary.amount, vm.currency)} />
                   <DetailRow label="Fee" value={formatMoney(vm.summary.fee, vm.currency)} />
                   <DetailRow label="Total" value={formatMoney(vm.summary.total, vm.currency)} strong />
                 </Card>
 
                 {vm.balance && (
-                  <AppText variant="caption" tone="faint" center>
-                    Paid from {vm.balance.name} · {formatMoney(vm.balance.balance, vm.balance.currency)} available
-                  </AppText>
+                  <View style={[styles.source, { backgroundColor: theme.surface }]}>
+                    <Icon name="wallet" size={18} color={theme.textMuted} />
+                    <AppText variant="label" tone="muted" style={styles.title}>
+                      Paid from {vm.balance.name}
+                    </AppText>
+                    <AppText variant="label">{formatMoney(vm.balance.balance, vm.balance.currency)}</AppText>
+                  </View>
                 )}
                 {vm.insufficient && (
                   <Notice tone="warning" text="Your balance is too low for this purchase. Top up or lower the amount." />
                 )}
                 {vm.error && <Notice tone="danger" text={vm.error} />}
-                {vm.quote?.demonstration && <Notice tone="warning" text="DEMONSTRATION purchase. No real HOT transaction will be made." />}
-                {!vm.quote && !vm.quoting && <Button label="Refresh quote / check earlier purchase" variant="outline" onPress={vm.requote} />}
+                {vm.quote?.demonstration && (
+                  <Notice tone="warning" text="DEMONSTRATION purchase. No real HOT transaction will be made." />
+                )}
+                {!vm.quote && !vm.quoting && (
+                  <Button label="Refresh quote" variant="outline" icon="refresh" onPress={vm.requote} />
+                )}
               </SheetBody>
             </View>
           )}
@@ -205,4 +216,14 @@ const styles = StyleSheet.create({
   headerButton: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   step: { flexShrink: 1 },
   hidden: { display: 'none' },
+  card: { borderRadius: radius.xl },
+  divider: { height: StyleSheet.hairlineWidth, marginVertical: space.sm },
+  source: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    minHeight: 48,
+    paddingHorizontal: 14,
+    borderRadius: radius.lg,
+  },
 });

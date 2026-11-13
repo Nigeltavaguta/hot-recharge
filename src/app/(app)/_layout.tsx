@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 
 import { PurchaseSheet } from '@/components/purchase/PurchaseSheet';
 import { refreshWallet } from '@/state/walletStore';
+import { fonts } from '@/theme/fonts';
 import { useTheme } from '@/theme/useTheme';
 
 export default function AppLayout() {
@@ -19,7 +20,7 @@ export default function AppLayout() {
         screenOptions={{
           headerStyle: { backgroundColor: theme.bg },
           headerTintColor: theme.text,
-          headerTitleStyle: { fontWeight: '700' },
+          headerTitleStyle: { fontFamily: fonts.bold },
           headerShadowVisible: false,
           headerBackButtonDisplayMode: 'minimal',
           contentStyle: { backgroundColor: theme.bg },

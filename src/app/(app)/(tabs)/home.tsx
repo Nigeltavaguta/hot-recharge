@@ -52,6 +52,7 @@ export default function HomeScreen() {
           onViewBalances={() => router.push('/balances')}
           unreadCount={vm.unreadCount}
           onOpenNotifications={() => router.push('/notifications')}
+          onOpenProfile={() => router.push('/profile')}
         />
       }>
       {/* Status bar icons that contrast with the top of the header: dark on pale, light on dark. */}

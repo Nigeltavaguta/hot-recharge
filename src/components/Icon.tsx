@@ -26,6 +26,7 @@ const ICONS = {
   failed: { ios: 'xmark.circle.fill', android: 'cancel' },
   pending: { ios: 'clock.fill', android: 'schedule' },
   share: { ios: 'square.and.arrow.up', android: 'share' },
+  copy: { ios: 'doc.on.doc', android: 'content_copy' },
   lock: { ios: 'lock.fill', android: 'lock' },
   mail: { ios: 'envelope.fill', android: 'mail' },
   logout: { ios: 'rectangle.portrait.and.arrow.right', android: 'logout' },

@@ -23,6 +23,20 @@ export function formatDateTime(iso: string): string {
   return `${formatDate(iso)}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+export function formatTime(iso: string): string {
+  const d = new Date(iso);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** "Today", "Yesterday" or the date. Used to group lists by day. */
+export function dayLabel(iso: string): string {
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const daysAgo = Math.round((startOfDay(new Date()) - startOfDay(new Date(iso))) / 86_400_000);
+  if (daysAgo === 0) return 'Today';
+  if (daysAgo === 1) return 'Yesterday';
+  return formatDate(iso);
+}
+
 export function relativeTime(iso: string): string {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
   if (minutes < 1) return 'Just now';
