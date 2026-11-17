@@ -17,6 +17,14 @@ import java.util.*;
 /** Documented transport surface. Unknown provider structures fail closed, never guessed. */
 @Component @ConditionalOnProperty(name="hot.mode",havingValue="live")
 public class LiveHotV3Client implements HotV3Client {
+    private static final org.slf4j.Logger LOG=org.slf4j.LoggerFactory.getLogger(LiveHotV3Client.class);
+    private void transportLog(String method,String route,long started,int status,String outcome) {
+        LOG.atLevel(status>=400?org.slf4j.event.Level.WARN:org.slf4j.event.Level.INFO)
+            .addKeyValue("event","provider_request_completed").addKeyValue("provider","hot_v3")
+            .addKeyValue("method",method).addKeyValue("route",route).addKeyValue("upstreamStatus",status)
+            .addKeyValue("outcome",outcome).addKeyValue("durationMs",(System.nanoTime()-started)/1_000_000)
+            .log("HOT provider request completed");
+    }
     private final RestClient http; private final ObjectMapper mapper;
     private boolean purchaseEnabled;
     @org.springframework.beans.factory.annotation.Autowired
@@ -29,25 +37,36 @@ public class LiveHotV3Client implements HotV3Client {
     }
     LiveHotV3Client(RestClient http,ObjectMapper mapper) {this.http=http;this.mapper=mapper;}
     private JsonNode post(String path,Object body,Credentials c) {
+        long started=System.nanoTime();
         try { var req=http.post().uri(path).contentType(org.springframework.http.MediaType.APPLICATION_JSON);
-            if(c!=null) req.header("Authorization","Bearer "+c.token()); return req.body(body).retrieve().body(JsonNode.class);
+            if(c!=null) req.header("Authorization","Bearer "+c.token());
+            var result=req.body(body).retrieve().toEntity(JsonNode.class);
+            transportLog("POST",path,started,result.getStatusCode().value(),"response_received");return result.getBody();
         } catch(RestClientResponseException e) {
+            transportLog("POST",path,started,e.getStatusCode().value(),"http_error");
             if(path.equals("/identity/login") && (e.getStatusCode().value()==400 || e.getStatusCode().value()==401))
                 throw new ApiException(401,"BAD_CREDENTIALS","Email/mobile number or password is incorrect.");
             throw safe(e.getStatusCode().value());
         }
-        catch(RestClientException e) { throw new ApiException(503,"PROVIDER_UNAVAILABLE","Provider response unavailable; verify any submitted purchase."); }
+        catch(RestClientException e) { transportLog("POST",path,started,503,"transport_or_decode_error");throw new ApiException(503,"PROVIDER_UNAVAILABLE","Provider response unavailable; verify any submitted purchase."); }
     }
     private JsonNode get(String path,Credentials c,Object... args) {
-        try { return http.get().uri(path,args).header("Authorization","Bearer "+c.token()).retrieve().body(JsonNode.class); }
-        catch(RestClientResponseException e) { throw safe(e.getStatusCode().value()); }
-        catch(RestClientException e) { throw new ApiException(503,"PROVIDER_UNAVAILABLE","Provider query unavailable."); }
+        long started=System.nanoTime();
+        try { var result=http.get().uri(path,args).header("Authorization","Bearer "+c.token()).retrieve().toEntity(JsonNode.class);
+            transportLog("GET",path,started,result.getStatusCode().value(),"response_received");return result.getBody(); }
+        catch(RestClientResponseException e) { transportLog("GET",path,started,e.getStatusCode().value(),"http_error");throw safe(e.getStatusCode().value()); }
+        catch(RestClientException e) { transportLog("GET",path,started,503,"transport_or_decode_error");throw new ApiException(503,"PROVIDER_UNAVAILABLE","Provider query unavailable."); }
     }
     private ApiException safe(int status) { return new ApiException(status==401?401:502,status==401?"PROVIDER_AUTH":"PROVIDER_REJECTED",status==401?"Sign in again to reconnect your HOT account.":"Provider request could not be completed."); }
     private String required(JsonNode n,String name) {
-        if(n==null || !n.hasNonNull(name) || n.get(name).asText().isBlank()) throw schema(); return n.get(name).asText();
+        if(n==null || !n.hasNonNull(name) || n.get(name).asText().isBlank()) throw schema("required_field_missing",name); return n.get(name).asText();
     }
-    private ApiException schema() { return new ApiException(502,"UNVERIFIED_PROVIDER_SCHEMA","Provider response mapping requires verification."); }
+    private ApiException schema() { return schema("unexpected_shape","unspecified"); }
+    private ApiException schema(String reason,String field) {
+        LOG.atError().addKeyValue("event","provider_schema_mismatch").addKeyValue("reason",reason)
+            .addKeyValue("field",field).log("HOT provider response mapping failed");
+        return new ApiException(502,"UNVERIFIED_PROVIDER_SCHEMA","Provider response mapping requires verification.");
+    }
     public Credentials login(String code,String password) {
         JsonNode n=post("/identity/login",new HotV3Dtos.LoginRequest(code,password),null);
         String token=required(n,"token");
@@ -66,12 +85,12 @@ public class LiveHotV3Client implements HotV3Client {
         JsonNode n=get("/account/balance",c);
         // Envelope not confirmed. Accept only explicit array or balances array, never empty-on-error.
         JsonNode list=n!=null&&n.isArray()?n:n==null?null:n.get("balances");
-        if(list==null||!list.isArray()) throw schema();
+        if(list==null||!list.isArray()) throw schema("expected_balance_array","balances");
         List<Balance> out=new ArrayList<>();
         for(JsonNode item:list) {
             String id=balanceField(item,"accountTypeId","AccountTypeId");String currency=switch(id){case "1","2"->"ZWG";case "3","4"->"USD";default->throw schema();};
             String balance=balanceField(item,"balance","Balance");
-            try { new java.math.BigDecimal(balance); } catch(NumberFormatException e) { throw schema(); }
+            try { new java.math.BigDecimal(balance); } catch(NumberFormatException e) { throw schema("invalid_decimal","balance"); }
             out.add(new Balance(id,balanceField(item,"name","Name"),balance,currency,Instant.now()));
         } return out;
     }
