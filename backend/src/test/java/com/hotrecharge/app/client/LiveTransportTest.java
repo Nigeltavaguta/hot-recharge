@@ -54,6 +54,20 @@ class LiveTransportTest {
         var error=assertThrows(com.hotrecharge.app.exception.ApiException.class,()->client.login("member@example.invalid","bad"));
         assertEquals(401,error.status);assertFalse(error.getMessage().contains("private"));server.verify();
     }
+    @Test void providerFailureLogsStatusAndTemplateWithoutResponseBodyOrPathArguments() {
+        var logger=(ch.qos.logback.classic.Logger)org.slf4j.LoggerFactory.getLogger(LiveHotV3Client.class);
+        var logs=new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
+        logs.start();logger.addAppender(logs);
+        try {
+            server.expect(requestTo("https://ssl.hot.co.zw/api/v3/query/transaction/private-reference"))
+                .andRespond(withBadRequest().body("private-provider-body"));
+            assertThrows(RuntimeException.class,()->client.lookup(credentials,"private-reference"));
+            var event=logs.list.getLast();String fields=event.getKeyValuePairs().toString();
+            assertTrue(fields.contains("/query/transaction/{reference}"));assertTrue(fields.contains("400"));
+            assertFalse(fields.contains("private-"));assertFalse(fields.contains("provider-secret"));
+            assertNull(event.getThrowableProxy());server.verify();
+        } finally {logger.detachAppender(logs);logs.stop();}
+    }
     @Test void catalogueStockBalancesAndLookupUseBearerHeaderAndDocumentedRoutes() {
         server.expect(requestTo("https://ssl.hot.co.zw/api/v3/products/0")).andExpect(header("Authorization","Bearer provider-secret"))
             .andRespond(withSuccess("{\"products\":[]}",MediaType.APPLICATION_JSON));
