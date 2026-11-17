@@ -7,7 +7,9 @@ import jakarta.validation.constraints.*;
 
 public final class Contracts {
     private Contracts() {}
-    public record Login(@NotBlank @Pattern(regexp="07[1378][0-9]{7}") String mobile, @NotBlank @Size(max=256) String password) {}
+    public record Login(@com.fasterxml.jackson.annotation.JsonAlias("mobile") @NotBlank @Size(max=254)
+                        @Pattern(regexp="(?:07[1378][0-9]{7}|[^\\s@]+@[^\\s@]+\\.[^\\s@]+)") String accessCode,
+                        @NotBlank @Size(max=256) String password) {}
     public record Refresh(@NotBlank @Size(max=256) String refreshToken) {}
     public record User(String accountId,String firstName,String lastName,String mobile,String email) {}
     public record Session(User user,String accessToken,String refreshToken,Instant expiresAt,boolean demonstration) {}

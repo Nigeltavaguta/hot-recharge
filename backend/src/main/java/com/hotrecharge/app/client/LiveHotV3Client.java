@@ -31,7 +31,11 @@ public class LiveHotV3Client implements HotV3Client {
     private JsonNode post(String path,Object body,Credentials c) {
         try { var req=http.post().uri(path).contentType(org.springframework.http.MediaType.APPLICATION_JSON);
             if(c!=null) req.header("Authorization","Bearer "+c.token()); return req.body(body).retrieve().body(JsonNode.class);
-        } catch(RestClientResponseException e) { throw safe(e.getStatusCode().value()); }
+        } catch(RestClientResponseException e) {
+            if(path.equals("/identity/login") && (e.getStatusCode().value()==400 || e.getStatusCode().value()==401))
+                throw new ApiException(401,"BAD_CREDENTIALS","Email/mobile number or password is incorrect.");
+            throw safe(e.getStatusCode().value());
+        }
         catch(RestClientException e) { throw new ApiException(503,"PROVIDER_UNAVAILABLE","Provider response unavailable; verify any submitted purchase."); }
     }
     private JsonNode get(String path,Credentials c,Object... args) {
@@ -51,7 +55,7 @@ public class LiveHotV3Client implements HotV3Client {
             // Claims are read only from the token received over authenticated provider TLS, never device input.
             JsonNode claims=mapper.readTree(Base64.getUrlDecoder().decode(token.split("\\.")[1]));
             String account=required(claims,"AccountId");
-            return new Credentials(token,required(n,"refreshToken"),new User(account,"","",code,claims.path("email").asText("")));
+            return new Credentials(token,required(n,"refreshToken"),new User(account,"","",code.contains("@")?"":code,claims.path("email").asText(code.contains("@")?code:"")));
         } catch(ApiException e) { throw e; } catch(Exception e) { throw schema(); }
     }
     public Credentials refresh(Credentials c) {
@@ -59,15 +63,20 @@ public class LiveHotV3Client implements HotV3Client {
         return new Credentials(required(n,"token"),required(n,"refreshToken"),c.user());
     }
     public List<Balance> balances(Credentials c) {
-        JsonNode n=get("/account/balance/0",c);
+        JsonNode n=get("/account/balance",c);
         // Envelope not confirmed. Accept only explicit array or balances array, never empty-on-error.
         JsonNode list=n!=null&&n.isArray()?n:n==null?null:n.get("balances");
         if(list==null||!list.isArray()) throw schema();
         List<Balance> out=new ArrayList<>();
         for(JsonNode item:list) {
-            String id=required(item,"accountTypeId");String currency=switch(id){case "1","2"->"ZWG";case "3","4"->"USD";default->throw schema();};
-            out.add(new Balance(id,required(item,"name"),required(item,"balance"),currency,Instant.now()));
+            String id=balanceField(item,"accountTypeId","AccountTypeId");String currency=switch(id){case "1","2"->"ZWG";case "3","4"->"USD";default->throw schema();};
+            String balance=balanceField(item,"balance","Balance");
+            try { new java.math.BigDecimal(balance); } catch(NumberFormatException e) { throw schema(); }
+            out.add(new Balance(id,balanceField(item,"name","Name"),balance,currency,Instant.now()));
         } return out;
+    }
+    private String balanceField(JsonNode item,String camel,String pascal) {
+        return required(item,item.has(camel)?camel:pascal);
     }
     public List<Product> products(Credentials c) {
         JsonNode root=get("/products/0",c);if(root==null||!root.path("products").isArray())throw schema();

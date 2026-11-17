@@ -18,7 +18,7 @@ function load(relative, dependencies) {
 }
 const errors = load('src/services/hotApi.ts', {});
 const contracts = load('src/services/contracts.ts', {});
-function setup() {
+function setup(production = false) {
   const storage = new Map();
   const calls = [];
   let scenario = 'success';
@@ -41,6 +41,7 @@ function setup() {
     throw new Error(`Unmapped route: ${route}`);
   };
   const { liveHotApi } = load('src/services/liveHotApi.ts', {
+    '@/config/api': { isProduction: production },
     'expo-crypto': { randomUUID: () => 'random-key-1234567890' },
     './deviceStorage': { deviceStorage: { get: async key => storage.get(key) ?? null, set: async (key, value) => { storage.set(key, value); }, remove: async key => { storage.delete(key); } } },
     './contracts': contracts, './hotApi': errors, './httpClient': { request },
@@ -62,6 +63,17 @@ test('backend adapter captures app session, maps balances, and submits an idempo
   assert.equal(call.options.token, 'app-access');
   assert.equal(call.options.body.amount, undefined);
   assert.equal(s.storage.has('hot-purchase-demo-1'), false);
+});
+test('email login sends accessCode intact to the backend', async () => {
+  const s = setup();
+  await s.api.login({ mobile: 'member@example.invalid', password: 'p' });
+  const login = s.calls.find(c => c.route === '/auth/login');
+  assert.deepEqual(JSON.parse(JSON.stringify(login.options.body)), { accessCode: 'member@example.invalid', password: 'p' });
+});
+test('production refuses a backend serving demonstration sessions', async () => {
+  const s = setup(true);
+  await assert.rejects(s.api.login({ mobile: 'member@example.invalid', password: 'p' }), /Production requires/);
+  assert.equal(s.storage.has('hot-refresh'), false);
 });
 test('lost purchase response retains recovery key and next tap looks up without dispatching again', async () => {
   const s = setup(); await s.api.login({ mobile: '0771234567', password: 'demo-password' });

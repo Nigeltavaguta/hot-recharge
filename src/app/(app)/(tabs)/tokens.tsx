@@ -9,6 +9,7 @@ import { FilterChips } from '@/components/FilterChips';
 import { Screen } from '@/components/Screen';
 import { useTabBarSpace } from '@/components/TabBar';
 import { TokenCard } from '@/components/TokenCard';
+import { isProduction } from '@/config/api';
 import { space } from '@/theme/colors';
 import { useTheme } from '@/theme/useTheme';
 import { useWalletViewModel } from '@/viewmodels/useWalletViewModel';
@@ -37,6 +38,8 @@ export default function TokensScreen() {
             : 'Every token and PIN you buy is kept here.'}
         </AppText>
       </View>
+
+      {isProduction && <AppText tone="muted">Tokens from earlier HOT Recharge website purchases are not imported.</AppText>}
 
       {showFilter && (
         <FilterChips

@@ -23,7 +23,7 @@ export default function LoginScreen() {
             <AppText style={styles.title} accessibilityRole="header">
               Welcome back
             </AppText>
-            <AppText tone="muted">Sign in to buy airtime, bundles and ZESA tokens.</AppText>
+            <AppText tone="muted">{apiMode === 'live' ? 'Sign in with your existing HOT Recharge account.' : 'Sign in to buy airtime, bundles and ZESA tokens.'}</AppText>
           </View>
 
           {vm.errors.form && <Notice tone="danger" text={vm.errors.form} />}
@@ -31,11 +31,13 @@ export default function LoginScreen() {
 
           <TextField
             filled
-            label="Mobile number"
+            label={apiMode === 'live' ? 'Email address or mobile number' : 'Mobile number'}
             icon="airtime"
-            placeholder="0772 345 678"
-            keyboardType="phone-pad"
-            autoComplete="tel"
+            placeholder={apiMode === 'live' ? 'Email or mobile number' : '0772 345 678'}
+            keyboardType={apiMode === 'live' ? 'default' : 'phone-pad'}
+            autoComplete={apiMode === 'live' ? 'username' : 'tel'}
+            autoCapitalize="none"
+            autoCorrect={false}
             returnKeyType="next"
             value={vm.mobile}
             onChangeText={vm.setMobile}
