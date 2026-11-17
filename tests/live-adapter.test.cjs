@@ -25,6 +25,8 @@ function setup(production = false) {
   const wire = state => ({ id: 'tx1', reference: 'ref1', type: 'airtime', title: 'DEMO airtime', recipient: '0771234567', amount: '1.00', fee: '0.00', currency: 'USD', date: new Date().toISOString(), status: state, verificationState: state === 'pending' ? 'unknown' : 'confirmed', demonstration: true });
   const request = async (route, options = {}) => {
     calls.push({ route, options });
+    if (route === '/auth/refresh' && scenario === 'refresh-rejected') throw new errors.ApiError('Sign in again', 'PROVIDER_AUTH', 401);
+    if (route === '/auth/refresh' && scenario === 'refresh-outage') throw new errors.ApiError('Unavailable', 'PROVIDER_UNAVAILABLE', 503);
     if (route === '/auth/login' || route === '/auth/refresh') return { user: { accountId: 'demo-1', firstName: 'Demo', lastName: 'User', mobile: '0771234567', email: '' }, accessToken: 'app-access', refreshToken: 'app-refresh', expiresAt: new Date(Date.now() + 600000).toISOString(), demonstration: true };
     if (route === '/account') return { user: { accountId: 'demo-1', firstName: 'Demo', lastName: 'User', mobile: '0771234567', email: '' }, demonstration: true };
     if (route === '/products') return [{ id: 'demo-airtime', category: 'airtime', network: 'econet', currency: 'USD' }];
@@ -94,6 +96,14 @@ test('logout clears refresh credentials and prevents requests under old user', a
   await s.api.logout();
   assert.equal(s.storage.has('hot-refresh'), false);
   await assert.rejects(s.api.getStockAccounts());
+});
+test('rejected refresh clears saved credentials but outages preserve them for retry', async () => {
+  const rejected = setup(); rejected.storage.set('hot-refresh', 'saved'); rejected.scenario('refresh-rejected');
+  await assert.rejects(rejected.api.restoreSession());
+  assert.equal(rejected.storage.has('hot-refresh'), false);
+  const outage = setup(); outage.storage.set('hot-refresh', 'saved'); outage.scenario('refresh-outage');
+  await assert.rejects(outage.api.restoreSession());
+  assert.equal(outage.storage.get('hot-refresh'), 'saved');
 });
 test('DTO adapter rejects unconfirmed success and invalid money instead of showing a false receipt', () => {
   assert.throws(() => contracts.transactionFromWire({ id: '1', status: 'success', verificationState: 'unknown', amount: '1', fee: '0' }));

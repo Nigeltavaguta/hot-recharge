@@ -33,3 +33,19 @@ Do not enable HTTP wire logging or SQL parameter logging to investigate producti
 
 Deploy the updated backend revision to Railway, open Deploy Logs and refresh the app to see
 these events. Network Logs continue to show Railway's HTTP status/timing independently.
+
+The balance client uses `/account/balance/0` (explicit default account-type parameter).
+The live OpenAPI at `https://ssl.hot.co.zw/api/v3/swagger/v3/swagger.json` declares
+`/api/v3/account/balance/{AccountTypeId}` with a required integer parameter and a
+`BalanceResponse` containing `balances`. The ReadMe reference documents 0 as the default.
+Regression tests cover this exact route and the four-account response envelope.
+The app now distinguishes balance mapping, provider and session errors and displays a
+support correlation reference rather than hiding every cause behind one generic warning.
+This route correction still needs validation against an authorized live account after deployment.
+
+Session restore rotates app tokens independently of HOT token expiry. The backend reuses
+a valid HOT token and refreshes it after expiry, as described by HOT's refresh reference.
+HOT refresh HTTP 400/401 responses map to `401 PROVIDER_AUTH` rather than `502`;
+temporary transport/server failures retain their failure classification. The mobile adapter
+removes rejected saved credentials on 401 and retains them during temporary outages.
+Refresh behavior is covered by mocked service and transport tests; live verification is still required.

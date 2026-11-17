@@ -13,7 +13,8 @@ export async function request<T>(path: string, options: { method?: 'GET' | 'POST
     });
     if (response.status === 204) return undefined as T;
     const body = await response.json();
-    if (!response.ok) throw new ApiError(typeof body.message === 'string' ? body.message : 'Backend request failed.', body.code, response.status);
+    if (!response.ok) throw new ApiError(typeof body.message === 'string' ? body.message : 'Backend request failed.', body.code, response.status,
+      typeof body.correlationId === 'string' && /^[A-Za-z0-9-]{1,80}$/.test(body.correlationId) ? body.correlationId : undefined);
     return body as T;
   } catch (error) {
     if (error instanceof ApiError) throw error;

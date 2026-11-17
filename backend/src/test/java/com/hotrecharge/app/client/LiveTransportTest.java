@@ -33,6 +33,12 @@ class LiveTransportTest {
             .andRespond(withSuccess("{\"token\":\"next\",\"refreshToken\":\"next-refresh\"}",MediaType.APPLICATION_JSON));
         assertEquals("next",client.refresh(credentials).token());server.verify();
     }
+    @Test void rejectedRefreshIsAnAuthenticationFailureRatherThanBadGateway() {
+        server.expect(requestTo("https://ssl.hot.co.zw/api/v3/identity/refresh"))
+            .andRespond(withBadRequest().body("private provider response"));
+        var error=assertThrows(com.hotrecharge.app.exception.ApiException.class,()->client.refresh(credentials));
+        assertEquals(401,error.status);assertEquals("PROVIDER_AUTH",error.code);server.verify();
+    }
     @Test void emailLoginDoesNotInventAMobileNumber() {
         String token="header."+Base64.getUrlEncoder().withoutPadding().encodeToString("{\"AccountId\":\"123\"}".getBytes(StandardCharsets.UTF_8))+".signature";
         server.expect(requestTo("https://ssl.hot.co.zw/api/v3/identity/login"))
@@ -42,7 +48,7 @@ class LiveTransportTest {
         assertEquals("",user.mobile());assertEquals("member@example.invalid",user.email());server.verify();
     }
     @Test void documentedPascalCaseBalancesAreMappedWithoutLosingPrecision() {
-        server.expect(requestTo("https://ssl.hot.co.zw/api/v3/account/balance"))
+        server.expect(requestTo("https://ssl.hot.co.zw/api/v3/account/balance/0"))
             .andExpect(header("Authorization","Bearer provider-secret"))
             .andRespond(withSuccess("[{\"AccountTypeId\":3,\"Name\":\"USD\",\"Balance\":12.34}]",MediaType.APPLICATION_JSON));
         var balance=client.balances(credentials).getFirst();
@@ -53,6 +59,22 @@ class LiveTransportTest {
             .andRespond(withBadRequest().body("provider private error"));
         var error=assertThrows(com.hotrecharge.app.exception.ApiException.class,()->client.login("member@example.invalid","bad"));
         assertEquals(401,error.status);assertFalse(error.getMessage().contains("private"));server.verify();
+    }
+    @Test void balanceRequestUsesExplicitDefaultAndSwaggerEnvelopeForAllFourAccounts() {
+        server.expect(requestTo("https://ssl.hot.co.zw/api/v3/account/balance/0"))
+            .andExpect(method(HttpMethod.GET)).andExpect(header("Authorization","Bearer provider-secret"))
+            .andRespond(withSuccess("""
+                {"balances":[
+                  {"accountTypeId":1,"name":"ZWG","balance":0},
+                  {"accountTypeId":2,"name":"ZWG Non-VAT","balance":1.25},
+                  {"accountTypeId":3,"name":"USD","balance":12.34},
+                  {"accountTypeId":4,"name":"USD Non-VAT","balance":0.50}
+                ]}
+                """,MediaType.APPLICATION_JSON));
+        var balances=client.balances(credentials);
+        assertEquals(4,balances.size());assertEquals("0",balances.getFirst().balance());
+        assertEquals("ZWG",balances.get(1).currency());assertEquals("USD",balances.get(2).currency());
+        assertEquals("12.34",balances.get(2).balance());server.verify();
     }
     @Test void providerFailureLogsStatusAndTemplateWithoutResponseBodyOrPathArguments() {
         var logger=(ch.qos.logback.classic.Logger)org.slf4j.LoggerFactory.getLogger(LiveHotV3Client.class);
@@ -73,7 +95,7 @@ class LiveTransportTest {
             .andRespond(withSuccess("{\"products\":[]}",MediaType.APPLICATION_JSON));
         server.expect(requestTo("https://ssl.hot.co.zw/api/v3/query/stock/16"))
             .andRespond(withSuccess("{\"stock\":[{\"productId\":16,\"productCode\":\"D1\",\"name\":\"Fixture\",\"description\":\"Fixture only\",\"value\":1.00,\"currency\":\"USD\",\"walletTypeId\":3}]}",MediaType.APPLICATION_JSON));
-        server.expect(requestTo("https://ssl.hot.co.zw/api/v3/account/balance"))
+        server.expect(requestTo("https://ssl.hot.co.zw/api/v3/account/balance/0"))
             .andRespond(withSuccess("[{\"accountTypeId\":4,\"name\":\"Utilities\",\"balance\":40}]",MediaType.APPLICATION_JSON));
         server.expect(requestTo("https://ssl.hot.co.zw/api/v3/query/transaction/original-ref"))
             .andRespond(withSuccess("{\"rawData\":\"unverified\"}",MediaType.APPLICATION_JSON));
@@ -81,7 +103,7 @@ class LiveTransportTest {
         assertEquals("4",client.balances(credentials).getFirst().id());assertEquals(PurchaseState.UNKNOWN,client.lookup(credentials,"original-ref").state());server.verify();
     }
     @Test void invalidBusinessSchemaAndProviderErrorsCannotBecomeSuccess() {
-        server.expect(requestTo("https://ssl.hot.co.zw/api/v3/account/balance"))
+        server.expect(requestTo("https://ssl.hot.co.zw/api/v3/account/balance/0"))
             .andRespond(withSuccess("{\"successful\":false}",MediaType.APPLICATION_JSON));
         server.expect(requestTo("https://ssl.hot.co.zw/api/v3/products/0")).andRespond(withUnauthorizedRequest().body("sensitive provider message"));
         assertThrows(RuntimeException.class,()->client.balances(credentials));

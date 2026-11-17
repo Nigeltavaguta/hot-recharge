@@ -46,6 +46,8 @@ public class LiveHotV3Client implements HotV3Client {
             transportLog("POST",path,started,e.getStatusCode().value(),"http_error");
             if(path.equals("/identity/login") && (e.getStatusCode().value()==400 || e.getStatusCode().value()==401))
                 throw new ApiException(401,"BAD_CREDENTIALS","Email/mobile number or password is incorrect.");
+            if(path.equals("/identity/refresh") && (e.getStatusCode().value()==400 || e.getStatusCode().value()==401))
+                throw new ApiException(401,"PROVIDER_AUTH","Your HOT Recharge session has expired. Sign in again.");
             throw safe(e.getStatusCode().value());
         }
         catch(RestClientException e) { transportLog("POST",path,started,503,"transport_or_decode_error");throw new ApiException(503,"PROVIDER_UNAVAILABLE","Provider response unavailable; verify any submitted purchase."); }
@@ -79,10 +81,12 @@ public class LiveHotV3Client implements HotV3Client {
     }
     public Credentials refresh(Credentials c) {
         JsonNode n=post("/identity/refresh",new HotV3Dtos.RefreshRequest(c.token(),c.refreshToken()),null);
+        if(n!=null && n.has("errors") && !n.hasNonNull("token"))
+            throw new ApiException(401,"PROVIDER_AUTH","Your HOT Recharge session has expired. Sign in again.");
         return new Credentials(required(n,"token"),required(n,"refreshToken"),c.user());
     }
     public List<Balance> balances(Credentials c) {
-        JsonNode n=get("/account/balance",c);
+        JsonNode n=get("/account/balance/0",c);
         // Envelope not confirmed. Accept only explicit array or balances array, never empty-on-error.
         JsonNode list=n!=null&&n.isArray()?n:n==null?null:n.get("balances");
         if(list==null||!list.isArray()) throw schema("expected_balance_array","balances");

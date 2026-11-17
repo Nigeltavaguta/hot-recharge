@@ -26,7 +26,16 @@ async function refresh() {
     const expected = generation;
     const token = await deviceStorage.get('hot-refresh');
     if (!token) throw new ApiError('Sign in to continue.', 'UNAUTHENTICATED', 401);
-    await acceptSession(await request<SessionResponse>('/auth/refresh', { method: 'POST', body: { refreshToken: token } }), expected);
+    try {
+      await acceptSession(await request<SessionResponse>('/auth/refresh', { method: 'POST', body: { refreshToken: token } }), expected);
+    } catch (error) {
+      // Rejected credentials require login; outages retain the token for a later retry.
+      if (generation === expected && error instanceof ApiError && error.status === 401) {
+        session = null;
+        await deviceStorage.remove('hot-refresh');
+      }
+      throw error;
+    }
   })().finally(() => { refreshFlight = null; });
   return refreshFlight;
 }

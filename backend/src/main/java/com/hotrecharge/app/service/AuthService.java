@@ -35,7 +35,14 @@ public class AuthService {
     @Transactional public Session refresh(String token) {
         AppSession s=sessions.lockRefresh(SecretBox.hash(token)).orElseThrow(AuthService::unauthorized);
         if(s.revoked||!s.refreshExpires.isAfter(Instant.now())) throw unauthorized();
-        var credentials=provider.refresh(json.read(box.open(s.providerSecret),HotV3Client.Credentials.class));s.providerSecret=box.seal(json.write(credentials));return issue(s);
+        // App tokens and HOT tokens have separate lifetimes. Reopening the app must not
+        // submit an unexpired HOT token to an endpoint documented for expired tokens.
+        if(config.mode.equals("live")) credentials(s);
+        else {
+            var credentials=provider.refresh(json.read(box.open(s.providerSecret),HotV3Client.Credentials.class));
+            s.providerSecret=box.seal(json.write(credentials));
+        }
+        return issue(s);
     }
     @Transactional public void logout(String id) { sessions.lock(id).ifPresent(s->{s.revoked=true;s.providerSecret=box.seal("{}");}); }
     @Transactional public HotV3Client.Credentials credentials(AppSession s) {
@@ -47,7 +54,7 @@ public class AuthService {
                 String claims=new String(java.util.Base64.getUrlDecoder().decode(credentials.token().split("\\.")[1]),java.nio.charset.StandardCharsets.UTF_8);
                 var data=json.read(claims,java.util.Map.class);Object exp=data.get("exp");
                 if(!(exp instanceof Number))throw unauthorized();
-                if(((Number)exp).longValue()<=Instant.now().plusSeconds(30).getEpochSecond()) {
+                if(((Number)exp).longValue()<=Instant.now().getEpochSecond()) {
                     credentials=provider.refresh(credentials);current.providerSecret=box.seal(json.write(credentials));sessions.saveAndFlush(current);
                 }
             } catch(ApiException e){throw e;}catch(Exception e){throw unauthorized();}
