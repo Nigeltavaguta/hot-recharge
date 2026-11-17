@@ -1,5 +1,6 @@
 import type { AppNotification, Order, StockAccount, Transaction } from '@/models';
 import { api, errorMessage } from '@/services';
+import { ApiError } from '@/services/hotApi';
 
 import { createStore } from './createStore';
 
@@ -54,7 +55,8 @@ export async function refreshWallet(): Promise<void> {
       ...(transactions.status === 'fulfilled' ? { transactions: transactions.value.items, transactionCursor: transactions.value.nextCursor } : {}),
       ...(vault.status === 'fulfilled' ? { vault: vault.value.items, vaultCursor: vault.value.nextCursor } : {}),
       ...(notifications.status === 'fulfilled' ? { notifications: notifications.value.map((n) => (seen.has(n.id) ? { ...n, read: true } : n)) } : {}),
-      error: [accounts, transactions, notifications, vault].some(r => r.status === 'rejected') ? 'Some account data could not be refreshed. Pull down to retry.' : null,
+      error: accounts.status === 'rejected' ? balanceError(accounts.reason)
+        : [transactions, notifications, vault].some(r => r.status === 'rejected') ? 'Some account data could not be refreshed. Pull down to retry.' : null,
       loaded: true,
     });
   } catch (error) {
@@ -62,6 +64,19 @@ export async function refreshWallet(): Promise<void> {
   } finally {
     if (requestGeneration === generation) walletStore.set({ loading: false });
   }
+}
+
+function balanceError(error: unknown): string {
+  const reasons: Record<string, string> = {
+    PROVIDER_REJECTED: 'HOT Recharge rejected the balance request.',
+    UNVERIFIED_PROVIDER_SCHEMA: 'The HOT Recharge balance response could not be read.',
+    PROVIDER_AUTH: 'Your HOT Recharge session has expired. Sign in again.',
+    UNAUTHENTICATED: 'Your session has expired. Sign in again.',
+    PROVIDER_UNAVAILABLE: 'HOT Recharge balances are temporarily unavailable.',
+  };
+  const message = error instanceof ApiError ? reasons[error.code] : undefined;
+  const reference = error instanceof ApiError && error.correlationId ? ` Reference: ${error.correlationId}.` : '';
+  return `${message ?? 'Your balance could not be refreshed.'} Pull down to retry.${reference}`;
 }
 
 export function setDraftOrder(order: Order | null): void {

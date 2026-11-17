@@ -11,5 +11,6 @@ logging:
       console: logstash
   level:
     root: INFO
+    com.hotrecharge.app: INFO
     org.springframework.web: WARN
     org.hibernate.SQL: WARN

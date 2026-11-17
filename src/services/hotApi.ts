@@ -42,7 +42,7 @@ export interface HotApi {
 
 /** An error whose message is safe and clear enough to show to the user. */
 export class ApiError extends Error {
-  constructor(message: string, public readonly code = 'API_ERROR', public readonly status = 0) {
+  constructor(message: string, public readonly code = 'API_ERROR', public readonly status = 0, public readonly correlationId?: string) {
     super(message);
     this.name = 'ApiError';
   }
