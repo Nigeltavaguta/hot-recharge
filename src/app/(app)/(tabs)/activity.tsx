@@ -8,6 +8,7 @@ import { EmptyState, Notice } from '@/components/Card';
 import { FilterChips } from '@/components/FilterChips';
 import { useTabBarSpace } from '@/components/TabBar';
 import { TransactionRow } from '@/components/TransactionRow';
+import { isProduction } from '@/config/api';
 import type { Transaction } from '@/models';
 import { space } from '@/theme/colors';
 import { useTheme } from '@/theme/useTheme';
@@ -68,6 +69,7 @@ export default function ActivityScreen() {
       ListHeaderComponent={
         <View style={styles.header}>
           <AppText variant="display">Activity</AppText>
+          {isProduction && <AppText tone="muted">Purchases recorded through this app appear here. Earlier HOT Recharge website transactions are not imported.</AppText>}
           {vm.error && <Notice tone="danger" text={vm.error} />}
           <FilterChips options={ACTIVITY_FILTERS} value={vm.filter} onChange={vm.setFilter} />
         </View>

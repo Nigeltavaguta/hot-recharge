@@ -1,3 +1,5 @@
+hot:
+  mode: live
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL}

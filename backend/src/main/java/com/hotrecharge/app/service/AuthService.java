@@ -18,7 +18,7 @@ public class AuthService {
     private final SessionRepository sessions; private final HotV3Client provider; private final SecretBox box;private final Json json;private final HotConfig config;
     public AuthService(SessionRepository sessions,HotV3Client provider,SecretBox box,Json json,HotConfig config) { this.sessions=sessions;this.provider=provider;this.box=box;this.json=json;this.config=config; }
     @Transactional public Session login(Login input) {
-        var credentials=provider.login(input.mobile(),input.password());
+        var credentials=provider.login(input.accessCode(),input.password());
         AppSession s=new AppSession();s.id=UUID.randomUUID().toString();s.owner=credentials.user().accountId();
         s.userJson=json.write(credentials.user());s.providerSecret=box.seal(json.write(credentials));
         return issue(s);

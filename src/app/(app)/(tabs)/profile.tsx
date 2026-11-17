@@ -46,7 +46,7 @@ export default function ProfileScreen() {
           {fullName}
         </AppText>
         <AppText tone="muted" center>
-          {user.mobile}
+          {user.mobile || user.email}
         </AppText>
       </View>
 

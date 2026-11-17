@@ -63,6 +63,14 @@ class CoreFlowsTest {
         assertNotEquals(next.accessToken(),stored.accessHash);auth.logout(stored.id);
         assertThrows(RuntimeException.class,()->auth.authenticate(next.accessToken()));
     }
+    @Test void emailAccessCodeIsAcceptedAndLegacyMobileStillWorks() throws Exception {
+        mvc.perform(post("/api/auth/login").contentType("application/json")
+            .content("{\"accessCode\":\"member@example.invalid\",\"password\":\"demo-password\"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.user.accountId").value("demo-member@example.invalid"));
+        mvc.perform(post("/api/auth/login").contentType("application/json")
+            .content("{\"accessCode\":\"invalid\",\"password\":\"demo-password\"}"))
+            .andExpect(status().isBadRequest());
+    }
     @Test void expiredSessionsCannotAuthenticate() {
         Session s=login("0771234568");AppSession row=principal(s);row.accessExpires=Instant.now().minusSeconds(1);sessions.saveAndFlush(row);
         assertThrows(RuntimeException.class,()->principal(s));

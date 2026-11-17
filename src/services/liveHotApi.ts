@@ -1,4 +1,5 @@
 import * as Crypto from 'expo-crypto';
+import { isProduction } from '@/config/api';
 import type { AppNotification, Bundle, MeterCustomer, Order, Product, PurchaseQuote, RegistrationResult, StockAccount, Transaction, User } from '@/models';
 import { deviceStorage } from './deviceStorage';
 import { displayMoney, transactionFromWire, type Page, type SessionResponse, type WireTransaction } from './contracts';
@@ -15,6 +16,7 @@ const recoveryKey = (owner: string) => `hot-purchase-${owner.replace(/[^A-Za-z0-
 async function acceptSession(next: SessionResponse, expectedGeneration: number) {
   if (generation !== expectedGeneration) throw new ApiError('Session changed. Sign in again.');
   if (!next.accessToken || !next.refreshToken || !next.user?.accountId) throw new ApiError('Invalid session response.');
+  if (isProduction && next.demonstration !== false) throw new ApiError('Production requires a backend connected to HOT Recharge live services.');
   await deviceStorage.set('hot-refresh', next.refreshToken);
   if (generation !== expectedGeneration) { await deviceStorage.remove('hot-refresh'); throw new ApiError('Session changed.'); }
   session = next;
@@ -65,7 +67,7 @@ async function clearIfTerminal(tx: Transaction) {
 export const liveHotApi: HotApi = {
   async login(input) {
     const expected = ++generation;
-    await acceptSession(await request<SessionResponse>('/auth/login', { method: 'POST', body: input }), expected);
+    await acceptSession(await request<SessionResponse>('/auth/login', { method: 'POST', body: { accessCode: input.mobile, password: input.password } }), expected);
     const account = await authenticated<{ user: User; demonstration: boolean }>('/account');
     return { ...account.user, demonstration: account.demonstration };
   },

@@ -4,20 +4,20 @@
     "development": {
       "distribution": "internal",
       "android": { "buildType": "apk", "gradleCommand": ":app:assembleDebug" },
-      "env": { "EXPO_PUBLIC_API_MODE": "mock" }
+      "env": { "EXPO_PUBLIC_APP_ENV": "development", "EXPO_PUBLIC_API_MODE": "mock" }
     },
     "competition": {
       "distribution": "internal",
       "android": { "buildType": "apk" },
-      "env": { "EXPO_PUBLIC_API_MODE": "mock" }
+      "env": { "EXPO_PUBLIC_APP_ENV": "development", "EXPO_PUBLIC_API_MODE": "mock" }
     },
     "backend-demo": {
       "extends": "competition",
-      "env": { "EXPO_PUBLIC_API_MODE": "live" }
+      "env": { "EXPO_PUBLIC_APP_ENV": "development", "EXPO_PUBLIC_API_MODE": "live" }
     },
     "production": {
       "android": { "buildType": "app-bundle" },
-      "env": { "EXPO_PUBLIC_API_MODE": "live" }
+      "env": { "EXPO_PUBLIC_APP_ENV": "production", "EXPO_PUBLIC_API_MODE": "live" }
     }
   }
 }
