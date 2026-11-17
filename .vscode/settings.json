@@ -4,5 +4,6 @@
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
   },
-  "python.terminal.useEnvFile": true
+  "python.terminal.useEnvFile": true,
+  "java.compile.nullAnalysis.mode": "automatic"
 }
